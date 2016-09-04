@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Telebot remote control</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta name="author" content="Paul-Louis Ageneau">
+        <meta name="robots" content="noindex, nofollow">
+        <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width">
+        <link rel="icon" type="image/x-icon" href="favicon.ico">
+        <link rel="stylesheet" type="text/css" href="style.css">
+        <script src="signaling_channel.js"></script>
+        <script src="telebot.js"></script>
+    </head>
+    <body>
+        <div id="container">
+            <img id="logo" src="telebot.png" alt="Telebot">
+            <div id="call_container">
+                <span id="status"></span><br>
+                <input class="button" type="button" id="call_button" value="Call" disabled><br>
+                <span id="message"></span><br>
+            </div>
+            <div id="session_container">
+                <input type="text" id="session_text" name="session"><br>
+                <input class="button" type="button" id="session_button" value="Go"><br>
+            </div>
+            <div id="video_container">
+                <video id="self_view" autoplay muted></video>
+                <video id="remote_view" autoplay></video>
+            </div>
+            <div id="control_container">
+                <table>
+                   <tr>
+                       <td></td>
+                       <td id="arrow_up"><img src="arrow_up.png" alt="up"></td>
+                       <td></td>
+                   </tr>
+                   <tr>
+                       <td id="arrow_left"><img src="arrow_left.png" alt="left"></td>
+                       <td id="arrow_down"><img src="arrow_down.png" alt="down"></td>
+                       <td id="arrow_right"><img src="arrow_right.png" alt="right"></td>
+                   </tr>
+                </table>
+            </div>
+        </div>
+    </body>
+</html>
