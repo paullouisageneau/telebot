@@ -153,7 +153,7 @@ window.onload = function() {
 			
 			if(active) {
 				// If active, call button triggers peerJoin()
-				callButton.disabled = false;
+				//callButton.disabled = false;
 				callButton.onclick = function() {
 					callButton.disabled = true;
 					peerJoin();
@@ -259,6 +259,7 @@ function requestStatus() {
 			var data = JSON.parse(this.response);
 			if(data.status == 'online') {
 				displayStatus("Robot is online !");
+				callButton.disabled = false;
 				if(Notification && oldStatus != 'online') {
 					var notif = new Notification("Telebot", {
 						body: "Robot is now online !"
@@ -267,9 +268,11 @@ function requestStatus() {
 			}
 			else if(data.status == 'busy') {
 				displayStatus("Robot is busy, please wait...");
+				callButton.disabled = true;
 			}
 			else {
 				displayStatus("Robot is offline, please wait...");
+				callButton.disabled = true;
 			}
 			oldStatus = data.status;
 		}
