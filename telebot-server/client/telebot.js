@@ -257,21 +257,22 @@ function requestStatus() {
 	request.onload = function() {
 		if (this.status >= 200 && this.status < 400) {
 			var data = JSON.parse(this.response);
+			var name = "Robot \""+sessionId+"\"";
 			if(data.status == 'online') {
-				displayStatus("Robot is online !");
+				displayStatus(name+" is online !");
 				callButton.disabled = false;
 				if(Notification && oldStatus != 'online') {
 					var notif = new Notification("Telebot", {
-						body: "Robot is now online !"
+						body: name+" is now online !"
 					});
 				}
 			}
 			else if(data.status == 'busy') {
-				displayStatus("Robot is busy, please wait...");
+				displayStatus(name+" is busy, please wait...");
 				callButton.disabled = true;
 			}
 			else {
-				displayStatus("Robot is offline, please wait...");
+				displayStatus(name+" is offline, please wait...");
 				callButton.disabled = true;
 			}
 			oldStatus = data.status;
