@@ -57,6 +57,11 @@ video {
 	top: 100px;
 	z-index: -2;
 }
+#logo_container {
+	display: block;
+	margin: 1em;
+	text-align: center;
+}
 #session_container {
 	display: none;
 	margin: 1em;
@@ -69,12 +74,6 @@ video {
 }
 #control_container {
 	display: none;
-}
-#logo {
-	display: block;
-	margin-left: auto;
-	margin-right: auto;
-	margin-bottom: 1em;
 }
 #message {
 	font-weight: bold;
