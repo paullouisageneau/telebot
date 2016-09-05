@@ -24,10 +24,7 @@
  * OF SUCH DAMAGE.
  */
 
-var sessionId = '';
-var userId = '';
-var active = true;
-
+// WebRTC configuration
 var configuration = {
   "rtcpMuxPolicy": "require",
   "bundlePolicy": "balanced",
@@ -42,6 +39,10 @@ var configuration = {
   }
   ]
 };
+
+var active = true;
+var sessionId = '';
+var userId = '';
 
 var signaling;
 var peerConnection;
@@ -324,7 +325,6 @@ function requestStatus() {
 	request.send();
 }
 
-
 // Callback for key down
 function handleKeyDown(evt) {
 	switch (evt.keyCode) {
@@ -409,10 +409,9 @@ function peerJoin() {
 	
 	// Handle incoming peer
 	signaling.onpeer = function (evt) {
-	
 		if(evt.userid == "telebot" || (active && evt.userid[0] != '_')) return;
-		if(timeout) clearTimeout(timeout);
 		
+		if(timeout) clearTimeout(timeout);
 		peer = evt.peer;
 		
 		// Handle signaling messages from peer
@@ -423,7 +422,7 @@ function peerJoin() {
 			signaling.close();
 			if (peerConnection) peerConnection.close();
 			signaling = null;
-                        peerConnection = null;
+			peerConnection = null;
 			peer = null;
 			
 			// Hide videos and display call container
@@ -485,16 +484,16 @@ function handleMessage(evt) {
 		}, logError);
 	}
 	
+	if(message.candidate) {
+		peerConnection.addIceCandidate(new RTCIceCandidate(message), function () {}, logError);
+	}
+	
 	if(message.orientation) {
 		if(remoteView) {
 			var transform = "rotate(" + message.orientation + "deg)";
 			remoteView.style.transform = remoteView.style.webkitTransform = transform;
 		}
 	} 
-	
-	if(message.candidate) {
-		peerConnection.addIceCandidate(new RTCIceCandidate(message), function () {}, logError);
-	}
 }
 
 // Initiate the session
@@ -549,8 +548,7 @@ function localDescCreated(desc) {
 
 // Send new controls to peer
 function updateControl() {
-	if(controlContainer.style.display == "none")
-		return;
+	if(controlContainer.style.display == "none") return;
 	
 	var left = 0;
 	var right = 0;
