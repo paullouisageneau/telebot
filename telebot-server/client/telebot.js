@@ -24,15 +24,9 @@
  * OF SUCH DAMAGE.
  */
 
-var active = true;
-var hash = window.location.hash.substr(1);
-if(hash && hash[0] == '_') {
-	active = false;
-	hash = hash.substr(1);
-}
-
-var sessionId = hash;
 var userId = (active ? '' : '_') + Math.random().toString(16).substr(2);
+var sessionId = '';
+var active = true;
 
 var configuration = {
   "rtcpMuxPolicy": "require",
@@ -95,16 +89,31 @@ if(Notification && Notification.permission != 'granted')
 	});
 }
 
-// onload handler
-window.onload = function() {
+// Initialization function
+function init()
+{
+	// Session and mode from hash
+	var hash = window.location.hash.substr(1);
+	if(hash && hash[0] == '_') {
+		// Leading '_' enables passive mode
+		if(!sessionStorage.mode) sessionStorage.mode = 'passive';
+		window.location.href = window.location.href.split("#")[0] + '#' + hash.substr(1);
+		return;
+	}
+	
+	if(!sessionStorage.mode) sessionStorage.mode = 'active';
+	active = (sessionStorage.mode != 'passive');
+	sessionId = hash;
+	
 	// Get elements ids
 	selfView = document.getElementById("self_view");
 	remoteView = document.getElementById("remote_view");
-	callContainer = document.getElementById("call_container");
-	callButton = document.getElementById("call_button");
+	logoContainer = document.getElementById("logo_container");
 	sessionContainer = document.getElementById("session_container");
 	sessionText = document.getElementById("session_text");
 	sessionButton = document.getElementById("session_button");
+	callContainer = document.getElementById("call_container");
+	callButton = document.getElementById("call_button");
 	videoContainer  = document.getElementById("video_container");
 	controlContainer = document.getElementById("control_container");
 	arrowUp    = document.getElementById("arrow_up"); 
@@ -112,9 +121,6 @@ window.onload = function() {
 	arrowLeft  = document.getElementById("arrow_left"); 
 	arrowRight = document.getElementById("arrow_right");
 	logo = document.getElementById("logo");
-	
-	// By default, call button is disabled
-	callButton.disabled = true;
 	
 	// If not active, switch to dark background
 	if(!active) {
@@ -124,12 +130,26 @@ window.onload = function() {
 		callButton.style.visibility = "hidden";
 	}
 	
+	// Initialize everything
+	if(signaling) signaling.close();
+	if(peerConnection) peerConnection.close();
+	signaling = null;
+	peerConnection = null;
+	peer = null;
+	remoteView.style.visibility = "hidden";
+	logoContainer.style.display = "block";
+	callContainer.style.display = "block";
+	sessionContainer.style.display = "none";
+	videoContainer.style.display = "none";
+	controlContainer.style.display = "none";
+	callButton.disabled = true;
+	
 	// If no session is specified, show session selector
 	if(!sessionId) {
 		callContainer.style.display = "none";
 		sessionContainer.style.display = "block";
 		sessionButton.onclick = function() {
-			window.location.href = window.location.href.split("#")[0] + '#' + sessionText.value;
+			window.location.href = window.location.href.split("#")[0] + '#' +  encodeURIComponent(sessionText.value);
 		};
 		sessionText.addEventListener("keyup", function(event) {
 			event.preventDefault();
@@ -141,12 +161,21 @@ window.onload = function() {
 		return;
 	}
 	
+	// Refresh status
+	if(active) requestStatus();
+};
+
+window.onload = function() {
 	// Check WebRTC is available
 	if(!navigator.webkitGetUserMedia) {
 		displayMessage("Browser not compatible");
 		return;
 	}
-
+	
+	// Initialize
+	init();
+	
+	
 	// Get a local stream
 	navigator.webkitGetUserMedia({
 			audio: true,
@@ -161,7 +190,6 @@ window.onload = function() {
 			
 			if(active) {
 				// If active, call button triggers peerJoin()
-				//callButton.disabled = false;
 				callButton.onclick = function() {
 					callButton.disabled = true;
 					peerJoin();
@@ -174,9 +202,12 @@ window.onload = function() {
 		},
 		function(error) {
 			logError(JSON.stringify(error));
+			callContainer.style.display = "none";
+			sessionContainer.style.display = "none";
 			displayMessage("Service not available");
+			clearTimeout(displayMessageTimeout);
 		});
-    
+	
 	if(active) {
 		// Handle mouse down on arrows
 		arrowUp.onmousedown = function (evt) {
@@ -245,16 +276,15 @@ window.onload = function() {
 		document.onkeyup = handleKeyUp;
 		
 		// Set status callback
-		requestStatus();
 		setInterval(function() { 
 			requestStatus();
 		}, 10000);
 	}
-};
+}
 
-// Reload on hash change
 window.onhashchange = function() {
-	window.location.reload();
+	// Re-initialize
+	init();
 }
 
 // Callback for status request
@@ -351,7 +381,7 @@ function handleKeyUp(evt) {
 function peerJoin() {
 	// This can be long, display proper message
 	if(active) displayMessage("Calling...");
-	else displayMessage("Ready\n"+sessionId);
+	else displayMessage("Ready\n\n"+sessionId);
 	
 	// Create signaling channel
 	signaling = new SignalingChannel(sessionId, userId);
@@ -391,8 +421,8 @@ function peerJoin() {
 		// Handle peer disconnection
 		peer.ondisconnect = function() {
 			signaling.close();
-			signaling = null;
 			if (peerConnection) peerConnection.close();
+			signaling = null;
                         peerConnection = null;
 			peer = null;
 			
@@ -401,7 +431,7 @@ function peerJoin() {
 			videoContainer.style.display = "none";
 			controlContainer.style.display = "none";
 			callContainer.style.display = "block";
-			logo.style.display = "block";
+			logoContainer.style.display = "block";
 			
 			if(active)
 			{
@@ -428,10 +458,8 @@ function peerJoin() {
 	
 	// Properly close signaling channel is window is closed
 	window.onbeforeunload = function () {
-		if(signaling) {
-			signaling.close();
-			signaling = null;
-		}
+		if(signaling) signaling.close();
+		signaling = null;
 		return null;
 	};
 }
@@ -476,7 +504,7 @@ function start(isInitiator) {
 	
 	videoContainer.style.display = "block";
 	callContainer.style.display = "none";
-	logo.style.display = "none";
+	logoContainer.style.display = "none";
 	
 	// Create peer connection with the given configuration
 	peerConnection = new webkitRTCPeerConnection(configuration);
