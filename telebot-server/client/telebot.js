@@ -24,8 +24,8 @@
  * OF SUCH DAMAGE.
  */
 
-var userId = (active ? '' : '_') + Math.random().toString(16).substr(2);
 var sessionId = '';
+var userId = '';
 var active = true;
 
 var configuration = {
@@ -100,10 +100,10 @@ function init()
 		window.location.href = window.location.href.split("#")[0] + '#' + hash.substr(1);
 		return;
 	}
-	
 	if(!sessionStorage.mode) sessionStorage.mode = 'active';
 	active = (sessionStorage.mode != 'passive');
 	sessionId = hash;
+	userId = (active ? '' : '_') + Math.random().toString(16).substr(2);
 	
 	// Get elements ids
 	selfView = document.getElementById("self_view");
