@@ -296,7 +296,7 @@ function requestStatus() {
 	request.onload = function() {
 		if (this.status >= 200 && this.status < 400) {
 			var data = JSON.parse(this.response);
-			var name = "Robot \""+sessionId+"\"";
+			var name = "Telebot \""+sessionId+"\"";
 			if(data.status == 'online') {
 				displayStatus(name+" is online !");
 				callButton.disabled = false;
