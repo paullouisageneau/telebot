@@ -290,6 +290,7 @@ window.onhashchange = function() {
 
 // Callback for status request
 function requestStatus() {
+	if(!sessionId) return;
 	var request = new XMLHttpRequest();
 	request.open('GET', "status/" + sessionId, true);
 	
