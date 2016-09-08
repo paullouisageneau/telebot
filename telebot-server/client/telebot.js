@@ -554,20 +554,20 @@ function updateControl() {
 	var left = 0;
 	var right = 0;
 	if(controlUp) {
-		left = 1;
-		right= 1;
+		left += 1;
+		right+= 1;
 	}
 	if(controlDown) {
-		left = -1;
-		right= -1;
+		left += -1;
+		right+= -1;
 	}
 	if(controlLeft) {
-		left = -1;
-		right= 1;
+		left += -1;
+		right+= 1;
 	}
 	if(controlRight) {
-		left = 1;
-		right= -1;
+		left += 1;
+		right+= -1;
 	}
 	
 	var power = 50;
