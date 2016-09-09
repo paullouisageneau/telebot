@@ -170,6 +170,7 @@ window.onload = function() {
 	// Check WebRTC is available
 	if(!navigator.webkitGetUserMedia) {
 		displayMessage("Browser not compatible");
+		clearTimeout(displayMessageTimeout);
 		return;
 	}
 	
