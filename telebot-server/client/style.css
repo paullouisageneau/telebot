@@ -6,18 +6,11 @@ body {
 	margin: 0;
 	padding: 1em;
 }
-
-h1, h2, h3 {
-
-}
 input {
 	vertical-align: middle;
 }
 input[type="text"] {
 	width: 8em;
-	position: relative;
-	padding: 0.25em;
-	font-size: 100%;
 }
 img {
 	max-width: 100%;
@@ -40,23 +33,6 @@ video {
 	margin-top: 0.5em;
 	margin-bottom: 0.5em;
 }
-#self_view {
-	position: absolute;
-	width: 160px;
-	height: 160px;
-	right: 1em;
-	z-index: -1;
-}
-#remote_view {
-	position: relative;
-	width: 640px;
-	height: 480px;
-	margin-left: auto;
-	margin-right: auto;
-	margin-bottom: 100px;
-	top: 100px;
-	z-index: -2;
-}
 #logo_container {
 	display: block;
 	margin: 1em;
@@ -74,6 +50,23 @@ video {
 }
 #control_container {
 	display: none;
+}
+#self_view {
+	position: absolute;
+	width: 160px;
+	height: 160px;
+	right: 1em;
+	z-index: -1;
+}
+#remote_view {
+	position: relative;
+	width: 640px;
+	height: 480px;
+	margin-left: auto;
+	margin-right: auto;
+	margin-bottom: 100px;
+	top: 100px;
+	z-index: -2;
 }
 #message {
 	font-weight: bold;
