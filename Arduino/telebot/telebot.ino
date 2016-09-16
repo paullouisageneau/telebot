@@ -260,8 +260,8 @@ void loop(void)
       Serial.println();*/
 
       // Linear correction with rotation and angle
-      const long k1 = 2000L;
-      const long k2 = 1000L;
+      const long k1 = 1000L;
+      const long k2 = 500L;
       long correction = rotxl/k1 + angx/k2;
       correction = constrain(correction, -2000, 2000);
   

@@ -571,7 +571,7 @@ function updateControl() {
 		right+= -1;
 	}
 	
-	var power = 50;
+	var power = 100;
 	left  = Math.min(Math.max(left,  -1), 1)*power;
 	right = Math.min(Math.max(right, -1), 1)*power;
 	
