@@ -7,10 +7,12 @@ body {
 	padding: 1em;
 }
 input {
+	font-size: 100%;
 	vertical-align: middle;
 }
 input[type="text"] {
 	width: 8em;
+	padding: 0.4em;
 }
 img {
 	max-width: 100%;
@@ -70,18 +72,18 @@ video {
 }
 #message {
 	font-weight: bold;
-	font-size: 1.1em;
+	font-size: 110%;
 }
 #status {
 	font-weight: bold;
-	font-size: 1em;
+	font-size: 100%;
 	color: #4A4A4A;
 }
 .button {
 	border: 1px solid #CCCCCC;
 	box-shadow: #FEFFFF 0px 1px 1px;
 	border-radius: 0.25em;
-	font-size: 1em;
+	font-size: 100%;
 	margin: 1em;
 	padding: 0.5em 0.75em 0.5em 0.75em;
 	text-decoration: none;
