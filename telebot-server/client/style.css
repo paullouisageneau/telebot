@@ -79,6 +79,9 @@ video {
 	top: 100px;
 	z-index: -2;
 }
+#logo {
+	margin-bottom: 0.5em;
+}
 #message {
 	font-weight: bold;
 	font-size: 110%;
