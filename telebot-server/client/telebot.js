@@ -59,6 +59,7 @@ var arrowUp;
 var arrowDown;
 var arrowLeft;
 var arrowRight;
+var footer;
 
 var controlUp    = false;
 var controlDown  = false;
@@ -121,13 +122,15 @@ function init()
 	arrowDown  = document.getElementById("arrow_down"); 
 	arrowLeft  = document.getElementById("arrow_left"); 
 	arrowRight = document.getElementById("arrow_right");
-	logo = document.getElementById("logo");
+	footer = document.getElementById("footer");
 	
 	// If not active, switch to dark background
 	if(!active) {
+		var logo = document.getElementById("logo");
 		document.body.style.background = "#000000";
 		document.body.style.color = "#FFFFFF";
 		logo.style.visibility = "hidden";
+		footer.style.visibility = "hidden";
 		callButton.style.visibility = "hidden";
 	}
 	
@@ -139,31 +142,37 @@ function init()
 	peer = null;
 	remoteView.style.visibility = "hidden";
 	logoContainer.style.display = "block";
+	footer.style.display = "block";
 	callContainer.style.display = "block";
 	sessionContainer.style.display = "none";
 	videoContainer.style.display = "none";
 	controlContainer.style.display = "none";
 	callButton.disabled = true;
 	
-	// If no session is specified, show session selector
-	if(!sessionId) {
-		callContainer.style.display = "none";
-		sessionContainer.style.display = "block";
-		sessionButton.onclick = function() {
-			window.location.href = window.location.href.split("#")[0] + '#' +  encodeURIComponent(sessionText.value);
-		};
-		sessionText.addEventListener("keyup", function(event) {
-			event.preventDefault();
-			if(event.keyCode == 13) {
-				sessionButton.click();
-			}
-		});
-		sessionText.focus();
-		return;
-	}
+	// If no session is specified, hide call container
+	if(!sessionId) callContainer.style.display = "none";
 	
-	// Refresh status
-	if(active) requestStatus();
+	if(active)
+	{
+		// If no session is specified, show session selector
+		if(!sessionId) {
+			sessionContainer.style.display = "block";
+			sessionButton.onclick = function() {
+				window.location.href = window.location.href.split("#")[0] + '#' +  encodeURIComponent(sessionText.value);
+			};
+			sessionText.addEventListener("keyup", function(event) {
+				event.preventDefault();
+				if(event.keyCode == 13) {
+					sessionButton.click();
+				}
+			});
+			sessionText.focus();
+			return;
+		}
+		
+		// Refresh status
+		requestStatus();
+	}
 };
 
 window.onload = function() {
@@ -176,7 +185,6 @@ window.onload = function() {
 	
 	// Initialize
 	init();
-	
 	
 	// Get a local stream
 	navigator.webkitGetUserMedia({
@@ -433,6 +441,7 @@ function peerJoin() {
 			controlContainer.style.display = "none";
 			callContainer.style.display = "block";
 			logoContainer.style.display = "block";
+			footer.style.display = "block";
 			
 			if(active)
 			{
@@ -506,6 +515,7 @@ function start(isInitiator) {
 	videoContainer.style.display = "block";
 	callContainer.style.display = "none";
 	logoContainer.style.display = "none";
+	footer.style.display = "none";
 	
 	// Create peer connection with the given configuration
 	peerConnection = new webkitRTCPeerConnection(configuration);

@@ -53,6 +53,15 @@ video {
 #control_container {
 	display: none;
 }
+#control_container table {
+	margin-left: auto;
+	margin-right: auto;
+}
+#control_container img {
+	width: 5em;
+	height: 5em;
+	cursor: pointer;
+}
 #self_view {
 	position: absolute;
 	width: 160px;
@@ -79,6 +88,16 @@ video {
 	font-size: 100%;
 	color: #4A4A4A;
 }
+#footer {
+	margin-top: 1em;
+	font-weight: normal;
+	font-size: 10pt;
+	text-align: center;
+	color: #606060;
+}
+#footer a {
+	color: #606060;
+}
 .button {
 	border: 1px solid #CCCCCC;
 	box-shadow: #FEFFFF 0px 1px 1px;
@@ -102,14 +121,5 @@ video {
 .button:hover, .button:disabled {
 	border: 1px solid #ADADAD;
 	background-color: #cdcdcd;
-}
-#control_container table {
-	margin-left: auto;
-	margin-right: auto;
-}
-#control_container img {
-	width: 5em;
-	height: 5em;
-	cursor: pointer;
 }
 
