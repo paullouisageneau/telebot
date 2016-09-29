@@ -76,7 +76,7 @@ var server = http.createServer(function (request, response) {
 			return;
 		}
 		
-		console.log("@" + sessionId + " - " + userId + " joined.");
+		console.log("@" + sessionId + ": " + userId + " joined");
 		
 		headers["Content-Type"] = "text/event-stream";
 		response.writeHead(200, headers);
@@ -93,7 +93,7 @@ var server = http.createServer(function (request, response) {
 		if(!user) {
 			if((userId != botUserId && !session.users[botUserId] && Object.keys(session.users).length >= usersInSessionLimit - 1)
 			|| (Object.keys(session.users).length >= usersInSessionLimit)) {
-				console.log("Limit for session reached");
+				console.log("@" + sessionId + ": Limit for session reached");
 				response.write("event:busy\ndata:" + sessionId + "\n\n");
 				clearTimeout(response.keepAliveTimer);
 				response.end();
@@ -112,24 +112,32 @@ var server = http.createServer(function (request, response) {
 			}
 		}
 		else if (user.esResponse) {
+			console.log("@" + sessionId + ": Replacing user " + userId);	
 			user.esResponse.end();
 			clearTimeout(user.esResponse.keepAliveTimer);
 			user.esResponse = null;
 		}
 		
-		user.esResponse = response;
-		
 		request.on("close", function() {
 			for(var pname in session.users) {
 				if (pname == userId) continue;
 				var esResp = session.users[pname].esResponse;
-				esResp.write("event:leave\ndata:" + userId + "\n\n");
+				if(esResp) {
+					esResp.write("event:leave\ndata:" + userId + "\n\n");
+				}
 			}
 			delete session.users[userId];
 			clearTimeout(response.keepAliveTimer);
-			console.log("@" + sessionId + " - " + userId + " left.");
-			console.log("users in session " + sessionId + ": " + Object.keys(session.users).length);
+			console.log("@" + sessionId + ": " + userId + " left");
+			console.log("@" + sessionId + ": " + Object.keys(session.users).length + " users");
 		});
+
+		response.on("error", function(err) {
+                        console.log("@" + sessionId + ": " + userId + ": " + err);
+			request.emit("close");
+		});
+
+		user.esResponse = response;
 	}
 	// Client to server
 	else if(parts[1] == "ctos") {
@@ -155,7 +163,7 @@ var server = http.createServer(function (request, response) {
 				if(!(peer = session.users[peerId]))
 					return;
 			}
-			console.log("@" + sessionId + " - " + userId + " => " + peerId + " :");
+			console.log("@" + sessionId + ": " + userId + " => " + peerId + " :");
 			console.log(body);
 			var evtdata = "data:" + body.replace(/\n/g, "\ndata:") + "\n";
 			peer.esResponse.write("event:user-" + userId + "\n" + evtdata + "\n");
@@ -182,31 +190,32 @@ var server = http.createServer(function (request, response) {
 		
 		response.write(JSON.stringify({"session": sessionId, "status": (online ? (busy ? "busy" : "online") : "offline")}));
 		response.end();
-		return;
 	}
+	else {
+		var url = request.url.split("?", 1)[0];
+		var filePath = path.join(clientDir, url);
+		if (filePath.indexOf(clientDir) != 0 || filePath == clientDir)
+			filePath = path.join(clientDir, "/index.html");
 	
-	var url = request.url.split("?", 1)[0];
-	var filePath = path.join(clientDir, url);
-	if (filePath.indexOf(clientDir) != 0 || filePath == clientDir)
-		filePath = path.join(clientDir, "/index.html");
-	
-	fs.stat(filePath, function (error, stats) {
-		if(error || !stats.isFile()) {
-			response.writeHead(404);
-			response.end("404 Not found");
-			return;
-		}
-		
-		var type = contentTypes[path.extname(filePath).substr(1)] || "text/plain";
-		response.writeHead(200, { "Content-Type": type });
-		
-		var readStream = fs.createReadStream(filePath);
-		readStream.on("error", function () {
-			response.writeHead(500);
-			response.end("500 Server error");
+		fs.stat(filePath, function (error, stats) {
+			if(error || !stats.isFile()) {
+				console.log("Error: File not found: " + filePath);
+				response.writeHead(404);
+				response.end("404 Not found");
+				return;
+			}
+			
+			var type = contentTypes[path.extname(filePath).substr(1)] || "text/plain";
+			response.writeHead(200, { "Content-Type": type });
+			
+			var readStream = fs.createReadStream(filePath);
+			readStream.on("error", function () {
+				response.writeHead(500);
+				response.end("500 Server error");
+			});
+			readStream.pipe(response);
 		});
-		readStream.pipe(response);
-	});
+	}
 });
 
 console.log('Server listening on port ' + port);
