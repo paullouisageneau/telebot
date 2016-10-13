@@ -29,7 +29,6 @@ package org.ageneau.telebot;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.reflect.InvocationTargetException;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
@@ -39,6 +38,7 @@ import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.media.AudioManager;
@@ -60,8 +60,8 @@ public class TelebotActivity extends Activity implements
         SignalingChannel.PeerDisconnectListener {
 
     // Settings
+    private static final String URL = "https://telebot.ageneau.net";
     private static final String TAG = "Telebot";
-    private static final String URL = "https://ageneau.net/telebot";
     private static final String USER_ID = "telebot";
     private static final String DEVICE_NAME = "Telebot";
 
@@ -95,7 +95,10 @@ public class TelebotActivity extends Activity implements
     protected void onDestroy() {
         super.onDestroy();
         try {
-            if(mBtSocket != null) mBtSocket.close();
+            if(mBtSocket != null) {
+                setControl(0, 0);
+                mBtSocket.close();
+            }
         } catch (IOException e) {
 
         }
@@ -109,10 +112,19 @@ public class TelebotActivity extends Activity implements
             @Override
             public void run() {
                 // Initialize serial
-                if(!initSerial()) return;
+                if(!initSerial()) {
+                    exitWithError("Unable to connect to the Bluetooth device. Please check it is paired.");
+                    return;
+                }
 
                 // Join session
-                join(mSessionId, mUserId);
+                try {
+                    join(mSessionId, mUserId);
+                } catch (IOException e) {
+                    Log.e(TAG, e.getMessage());
+                    exitWithError("Connection to the server failed.");
+                    return;
+                }
 
                 // Force sound through speaker
                 AudioManager audioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
@@ -122,7 +134,17 @@ public class TelebotActivity extends Activity implements
                 // Finally, start the browser to actually handle WebRTC
                 Intent i = new Intent(Intent.ACTION_VIEW);
                 i.setData(Uri.parse(URL + "/#_" + mSessionId));
-                startActivityForResult(i, 2);
+                i.setPackage("com.android.chrome");
+                try {
+                    try {
+                        startActivityForResult(i, 2);
+                    } catch (ActivityNotFoundException e) {
+                        i.setPackage("org.mozilla.firefox");
+                        startActivityForResult(i, 2);
+                    }
+                } catch (ActivityNotFoundException e) {
+                    exitWithError("You need to install Google Chrome or Mozilla Firefox.");
+                }
             }
         });
     }
@@ -176,10 +198,7 @@ public class TelebotActivity extends Activity implements
     private boolean initSerial() {
         // Get the Bluetooth adapter
         mBtAdapter = BluetoothAdapter.getDefaultAdapter();
-        if(mBtAdapter == null) {
-            exitWithError("Bluetooth not supported");
-            return false;
-        }
+        if(mBtAdapter == null) return false;
 
         // Check if Bluetooth is enabled
         if(mBtAdapter.isEnabled()) {
@@ -217,12 +236,7 @@ public class TelebotActivity extends Activity implements
             }
         }
 
-        if(mSerialThread == null) {
-            exitWithError("Unable to connect to Bluetooth device. Please check it is paired.");
-            return false;
-        }
-
-        return true;
+        return (mSerialThread != null);
     }
 
     // Thread handling the BluetoothSocket
@@ -270,12 +284,13 @@ public class TelebotActivity extends Activity implements
         }
     }
 
-    public void join(String sessionId, String userId) {
+    public void join(String sessionId, String userId) throws IOException {
         Log.d(TAG, "joining: " + sessionId);
         mSignaling = new SignalingChannel(URL, sessionId, userId);
         mSignaling.setJoinListener(this);
         mSignaling.setDisconnectListener(this);
         mSignaling.setSessionFullListener(this);
+        mSignaling.open();
     }
 
     @Override
@@ -315,7 +330,7 @@ public class TelebotActivity extends Activity implements
     public void onDisconnect() {
         mSignaling = null;
         setControl(0, 0);
-        exitWithError("Disconnected from server");
+        //exitWithError("Disconnected from server");
     }
 
     @Override

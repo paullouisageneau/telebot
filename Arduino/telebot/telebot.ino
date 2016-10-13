@@ -42,7 +42,8 @@ const int motorRightEnablePin   = 6;
 
 const long stepMillis = 10L;
 const long calibrationMillis = 2000L;
-const long batteryProbeFactor = 4106L;
+const long batteryProbeFactor = 3912L;  // Change for another board
+//const long batteryProbeFactor = 4106L;
 
 SoftwareSerial bluetooth(8, 9); // TX, RX
 String inputString = "";

@@ -43,6 +43,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -66,29 +67,18 @@ public class SignalingChannel {
         mMainHandler = new Handler(Looper.getMainLooper());
         Thread sendThread = new SendThread();
         sendThread.start();
-        open();
     }
 
-    private class SendThread extends Thread {
-        @Override
-        public void run() {
-            Looper.prepare();
-            mSendHandler = new Handler();
-            Looper.loop();
-            Log.d(TAG, "SendThread: quit");
-        }
-    }
+    public void open() throws IOException {
+        final URL url = new URL(mServerToClientUrl);
+        final HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
 
-    private void open() {
-        new Thread(new Runnable() {
+        Thread t = new Thread(new Runnable() {
+            private HttpURLConnection connection = urlConnection;
             @Override
             public void run() {
-                HttpURLConnection urlConnection = null;
                 try {
-                    URL url = new URL(mServerToClientUrl);
-                    urlConnection = (HttpURLConnection) url.openConnection();
-
-                    InputStream eventStream = urlConnection.getInputStream();
+                    InputStream eventStream = connection.getInputStream();
                     BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(eventStream));
                     readEventStream(bufferedReader);
                 }
@@ -97,9 +87,7 @@ public class SignalingChannel {
                     e.printStackTrace();
                 }
                 finally {
-                    if(urlConnection != null) {
-                        urlConnection.disconnect();
-                    }
+                    connection.disconnect();
                     mMainHandler.post(new Runnable() {
                         @Override
                         public void run() {
@@ -113,7 +101,19 @@ public class SignalingChannel {
                     });
                 }
             }
-        }).start();
+        });
+
+        t.start();
+    }
+
+    private class SendThread extends Thread {
+        @Override
+        public void run() {
+            Looper.prepare();
+            mSendHandler = new Handler();
+            Looper.loop();
+            Log.d(TAG, "SendThread: quit");
+        }
     }
 
     private void readEventStream(final BufferedReader bufferedReader) throws IOException {
