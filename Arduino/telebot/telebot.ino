@@ -42,7 +42,8 @@ const int motorRightEnablePin   = 6;
 
 const long stepMillis = 10L;
 const long calibrationMillis = 2000L;
-const long batteryProbeFactor = 3912L;  // Change for another board
+
+const long batteryProbeFactor = 3912L;  // Adjust for another board
 //const long batteryProbeFactor = 4106L;
 
 SoftwareSerial bluetooth(8, 9); // TX, RX
@@ -261,8 +262,8 @@ void loop(void)
       Serial.println();*/
 
       // Linear correction with rotation and angle
-      const long k1 = 1000L;
-      const long k2 = 500L;
+      const long k1 = 1000L;	// Adjust this depending on motor
+      const long k2 = 500L;	// Adjust this depending on motor
       long correction = rotxl/k1 + angx/k2;
       correction = constrain(correction, -2000, 2000);
   
