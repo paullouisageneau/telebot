@@ -44,7 +44,7 @@ module gear(r, h, d)
     f = 0.5+0.5*r/(r+d);
     c = 2*PI*r/f;
     n = floor(c/d);
-
+    echo(n);
     union() {
         cylinder(h=h, r=r, center=true, $fn=90);
         
