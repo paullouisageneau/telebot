@@ -51,10 +51,10 @@ const long stepMillis = 10L;
 const long calibrationMillis = 2000L;
 
 // ----------- Motors ------------
-const long k1 = 1000L;	// Adjust k1 and k2 depending on motor
+const long k1 = 1000L;	// Adjust k1 and k2 depending on motors
 const long k2 = 500L;
 
-int motorMin = 80;	// Adjust min and max depending on motor
+int motorMin = 80;	// Adjust min and max depending on motors
 int motorMax = 255;
 
 // -------------------------------
