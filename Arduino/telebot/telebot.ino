@@ -33,6 +33,7 @@
 #include <Wire.h>
 #endif
 
+// ---------- Pin setup ----------
 const int motorLeftBackwardPin  = 2;
 const int motorLeftForwardPin   = 3;
 const int motorLeftEnablePin    = 5;
@@ -40,16 +41,26 @@ const int motorRightBackwardPin = 7;
 const int motorRightForwardPin  = 4;
 const int motorRightEnablePin   = 6;
 
-const long stepMillis = 10L;
-const long calibrationMillis = 2000L;
+SoftwareSerial bluetooth(8, 9); // TX, RX
 
 const long batteryProbeFactor = 3912L;  // Adjust for another board
 //const long batteryProbeFactor = 4106L;
 
-SoftwareSerial bluetooth(8, 9); // TX, RX
-String inputString = "";
+// ----------- Timings -----------
+const long stepMillis = 10L;
+const long calibrationMillis = 2000L;
+
+// ----------- Motors ------------
+const long k1 = 1000L;	// Adjust k1 and k2 depending on motor
+const long k2 = 500L;
+
+int motorMin = 80;	// Adjust min and max depending on motor
+int motorMax = 255;
+
+// -------------------------------
 
 unsigned long oldmicros = 0L;
+String inputString = "";
 
 long steps = 0L;
 long rotx0 = 0L;
@@ -58,14 +69,13 @@ long accz0 = 0L;
 long acczl = 0L;
 long angx  = 0L;
 
-int motorMin = 80;
-int motorMax = 255;
 int motorRightPower   = 0;
 int motorLeftPower    = 0;
 int commandRightPower = 0;
 int commandLeftPower  = 0;
 int tempRightPower    = 0;
 int tempLeftPower     = 0;
+
 
 void motorRight(int power)
 {
