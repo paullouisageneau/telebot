@@ -69,27 +69,23 @@ var controlRight = false;
 var oldStatus = 'online';
 var displayMessageTimeout = null;
 
-// Handle legacy Mozilla Firefox browsers
-if(window.mozRTCPeerConnection && !window.webkitRTCPeerConnection) {
-	window.webkitURL = window.URL;
-	navigator.webkitGetUserMedia = navigator.mozGetUserMedia;
-	window.webkitRTCPeerConnection = window.mozRTCPeerConnection;
-	window.RTCSessionDescription = window.mozRTCSessionDescription;
-	window.RTCIceCandidate = window.mozRTCIceCandidate;
-}
-
 // Set orientation to 0 if not defined
 if(!window.hasOwnProperty("orientation"))
 	window.orientation = 0;
 
 // Request notification permission
-var Notification = window.Notification || window.mozNotification || window.webkitNotification;
+var Notification = window.Notification || window.webkitNotification || window.mozNotification;
 if(Notification && Notification.permission != 'granted')
 {
 	Notification.requestPermission(function (permission) {
 		console.log(permission);
 	});
 }
+
+// Get RTC objects
+var RTCPeerConnection = window.RTCPeerConnection || window.webkitRTCPeerConnection || window.mozRTCPeerConnection;
+var RTCSessionDescription = window.RTCSessionDescription || window.webkitRTCSessionDescription || window.mozRTCSessionDescription;
+var RTCIceCandidate = window.RTCIceCandidate || window.webkitRTCIceCandidate || window.mozRTCIceCandidate;
 
 // Initialization function
 function init()
@@ -177,7 +173,7 @@ function init()
 
 window.onload = function() {
 	// Check WebRTC is available
-	if(!navigator.webkitGetUserMedia) {
+	if(!navigator.mediaDevices.getUserMedia) {
 		displayMessage("Browser not compatible");
 		clearTimeout(displayMessageTimeout);
 		return;
@@ -187,17 +183,18 @@ window.onload = function() {
 	init();
 	
 	// Get a local stream
-	navigator.webkitGetUserMedia({
-			audio: true,
-			video: true
-		},
-		function (stream) {
+	var constraints = { audio: true, video: true }; 
+	navigator.mediaDevices.getUserMedia(constraints)
+		.then(function(stream) {
 			localStream = stream;
-			
-			// Set self view
-			selfView.src = URL.createObjectURL(localStream);
+
+ 			// Set self view
+ 			selfView.srcObject = stream;
 			selfView.style.visibility = "visible";
-			
+			selfView.onloadedmetadata = function(evt) {
+				selfView.play();
+			};
+
 			if(active) {
 				// If active, call button triggers peerJoin()
 				callButton.onclick = function() {
@@ -209,9 +206,9 @@ window.onload = function() {
 				// If not active, call peerJoin() directly
 				peerJoin();
 			}
-		},
-		function(error) {
-			logError(JSON.stringify(error));
+		})
+		.catch(function(err) { 
+			logError(err);
 			callContainer.style.display = "none";
 			sessionContainer.style.display = "none";
 			displayMessage("Service not available");
@@ -502,7 +499,7 @@ function handleMessage(evt) {
 	if(message.orientation) {
 		if(remoteView) {
 			var transform = "rotate(" + message.orientation + "deg)";
-			remoteView.style.transform = remoteView.style.webkitTransform = transform;
+			remoteView.style.transform = remoteView.style.webkitTransform = remoteView.style.mozTransform = transform;
 		}
 	} 
 }
@@ -518,7 +515,7 @@ function start(isInitiator) {
 	footer.style.display = "none";
 	
 	// Create peer connection with the given configuration
-	peerConnection = new webkitRTCPeerConnection(configuration);
+	peerConnection = new RTCPeerConnection(configuration);
 	
 	// Send all ICE candidates to peer
 	peerConnection.onicecandidate = function (evt) {
@@ -533,8 +530,12 @@ function start(isInitiator) {
 	
 	// Once we get the remote stream, show it
 	peerConnection.onaddstream = function (evt) {
-		remoteView.src = URL.createObjectURL(evt.stream);
+		remoteView.srcObject = evt.stream;
 		remoteView.style.visibility = "visible";
+		remoteView.onloadedmetadata = function(evt) {
+			remoteView.play();
+		};
+
 		if(active) controlContainer.style.display = "block";
 		sendOrientationUpdate();
 	};
@@ -615,10 +616,10 @@ function displayStatus(msg) {
 }
 
 // Log error
-function logError(error) {
-	if(error) {
-		if(error.name && error.message) log(error.name + ": " + error.message);
-		else log(error);
+function logError(err) {
+	if(err) {
+		if(err.name && err.message) log(err.name + ": " + err.message);
+		else log(err);
 	}
 	else {
 		log("Unknown error");
