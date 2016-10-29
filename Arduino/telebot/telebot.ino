@@ -76,6 +76,7 @@ int commandLeftPower  = 0;
 int tempRightPower    = 0;
 int tempLeftPower     = 0;
 
+int batteryProbeCount = 0;
 
 void motorRight(int power)
 {
@@ -189,11 +190,18 @@ void loop(void)
   // Stop motors and exit program on low battery
   if(batteryPercent == 0)
   {
-    bluetooth.print("B 0");
-    bluetooth.println();
-    motorRight(0);
-    motorLeft(0);
-    exit(0);
+    ++batteryProbeCount;
+    if(batteryProbeCount == 10)
+    {
+      bluetooth.print("B 0");
+      bluetooth.println();
+      motorRight(0);
+      motorLeft(0);
+      exit(0);
+    }
+  }
+  else {
+    batteryProbeCount = 0;
   }
 
 #ifdef USE_SOFTI2C
