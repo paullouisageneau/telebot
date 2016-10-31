@@ -54,7 +54,7 @@ const long calibrationMillis = 2000L;
 const long k1 = 1000L;	// Adjust k1 and k2 depending on motors
 const long k2 = 500L;
 
-int motorMin = 80;	// Adjust min and max depending on motors
+int motorMin = 40;	// Adjust min and max depending on motors
 int motorMax = 255;
 
 // -------------------------------
@@ -280,8 +280,6 @@ void loop(void)
       Serial.println();*/
 
       // Linear correction with rotation and angle
-      const long k1 = 1000L;	// Adjust this depending on motor
-      const long k2 = 500L;	// Adjust this depending on motor
       long correction = rotxl/k1 + angx/k2;
       correction = constrain(correction, -2000, 2000);
   
