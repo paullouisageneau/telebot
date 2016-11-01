@@ -563,7 +563,7 @@ function localDescCreated(desc) {
 function updateControl() {
 	if(controlContainer.style.display == "none") return;
 	
-	var left = 0;
+	var left  = 0;
 	var right = 0;
 	if(controlUp) {
 		left += 1;
@@ -574,12 +574,12 @@ function updateControl() {
 		right+= -1;
 	}
 	if(controlLeft) {
-		left += -1;
-		right+= 1;
+		left = Math.min(left  - 0.50, 0);
+		right= Math.max(right + 0.25, 0);
 	}
 	if(controlRight) {
-		left += 1;
-		right+= -1;
+		left = Math.max(left  + 0.25, 0);
+		right= Math.min(right - 0.50, 0);
 	}
 	
 	var power = 100;
