@@ -52,7 +52,7 @@ const long calibrationMillis = 2000L;
 
 // ----------- Motors ------------
 const long k1 = 1000L;	// Adjust k1 and k2 depending on motors
-const long k2 = 500L;
+const long k2 = 400L;
 
 int motorMin = 40;	// Adjust min and max depending on motors
 int motorMax = 255;
@@ -266,9 +266,9 @@ void loop(void)
       // Integrate rotation
       angx+= rotx*stepMillis/1000L;
 
-      // Recalibrate angle according to gravity if idle
+      // Recalibrate angle according to gravity
       const long g = 10L;
-      const long beta = 100L;
+      const long beta = 50L;
       angx = (angx*(beta-1) - acczl/g)/beta;
       
       /*Serial.print("rotx=");
