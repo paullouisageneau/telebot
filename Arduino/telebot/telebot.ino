@@ -254,6 +254,11 @@ void loop(void)
       Serial.println();*/
     }
     else {
+      // Update idle input values
+      const long gamma = 10000L;
+      rotx0 = (rotx0*(gamma-1) + rotx)/gamma;
+      accz0 = (accz0*(gamma-1) + accz)/gamma;
+      
       // Center inputs
       rotx = rotx - rotx0;
       accz = accz - accz0;
@@ -268,7 +273,7 @@ void loop(void)
 
       // Recalibrate angle according to gravity
       const long g = 10L;
-      const long beta = 50L;
+      const long beta = 100L;
       angx = (angx*(beta-1) - acczl/g)/beta;
       
       /*Serial.print("rotx=");
