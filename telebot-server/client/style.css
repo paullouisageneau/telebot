@@ -37,17 +37,17 @@ video {
 }
 #logo_container {
 	display: block;
-	margin: 1em;
+	margin: 0.5em;
 	text-align: center;
 }
 #session_container {
 	display: none;
-	margin: 1em;
+	margin: 0.5em;
 	text-align: center;
 }
 #call_container {
 	display: block;
-	margin: 1em;
+	margin: 0.5em;
 	text-align: center;
 }
 #control_container {
@@ -61,6 +61,11 @@ video {
 	width: 5em;
 	height: 5em;
 	cursor: pointer;
+}
+#control_container td {
+	min-width: 5em;
+	min-height: 5em;
+	text-align: center;
 }
 #self_view {
 	position: absolute;
@@ -80,7 +85,7 @@ video {
 	z-index: -2;
 }
 #logo {
-	margin-bottom: 0.5em;
+	margin-bottom: 1em;
 }
 #message {
 	font-weight: bold;

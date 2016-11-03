@@ -25,10 +25,10 @@
  */
 
 // WebRTC configuration
-var configuration = {
-  "rtcpMuxPolicy": "require",
-  "bundlePolicy": "balanced",
-  "iceServers": [
+var rtcConfiguration = {
+  rtcpMuxPolicy: "require",
+  bundlePolicy: "balanced",
+  iceServers: [
   {
     "url": "stun:stun.ageneau.net:3478"
   },
@@ -40,6 +40,13 @@ var configuration = {
   ]
 };
 
+// Media recorder options
+var recorderOptions = {
+	mimeType : 'video/webm',
+	audioBitsPerSecond :   64000,	// sufficient for OPUS
+	videoBitsPerSecond :  640000	// 500-1000Kbps should be OK
+};
+
 var active = true;
 var sessionId = '';
 var userId = '';
@@ -48,6 +55,8 @@ var signaling;
 var peerConnection;
 var peer;
 var localStream;
+var remoteStream;
+var recorder;
 
 var selfView;
 var remoteView;
@@ -73,16 +82,8 @@ var displayMessageTimeout = null;
 if(!window.hasOwnProperty("orientation"))
 	window.orientation = 0;
 
-// Request notification permission
+// Get prefixed objects
 var Notification = window.Notification || window.webkitNotification || window.mozNotification;
-if(Notification && Notification.permission != 'granted')
-{
-	Notification.requestPermission(function (permission) {
-		console.log(permission);
-	});
-}
-
-// Get RTC objects
 var RTCPeerConnection = window.RTCPeerConnection || window.webkitRTCPeerConnection || window.mozRTCPeerConnection;
 var RTCSessionDescription = window.RTCSessionDescription || window.webkitRTCSessionDescription || window.mozRTCSessionDescription;
 var RTCIceCandidate = window.RTCIceCandidate || window.webkitRTCIceCandidate || window.mozRTCIceCandidate;
@@ -103,23 +104,6 @@ function init()
 	sessionId = hash;
 	userId = (active ? '' : '_') + Math.random().toString(16).substr(2);
 	
-	// Get elements ids
-	selfView = document.getElementById("self_view");
-	remoteView = document.getElementById("remote_view");
-	logoContainer = document.getElementById("logo_container");
-	sessionContainer = document.getElementById("session_container");
-	sessionText = document.getElementById("session_text");
-	sessionButton = document.getElementById("session_button");
-	callContainer = document.getElementById("call_container");
-	callButton = document.getElementById("call_button");
-	videoContainer  = document.getElementById("video_container");
-	controlContainer = document.getElementById("control_container");
-	arrowUp    = document.getElementById("arrow_up"); 
-	arrowDown  = document.getElementById("arrow_down"); 
-	arrowLeft  = document.getElementById("arrow_left"); 
-	arrowRight = document.getElementById("arrow_right");
-	footer = document.getElementById("footer");
-	
 	// If not active, switch to dark background
 	if(!active) {
 		var logo = document.getElementById("logo");
@@ -136,6 +120,7 @@ function init()
 	signaling = null;
 	peerConnection = null;
 	peer = null;
+	remoteStream = null;
 	remoteView.style.visibility = "hidden";
 	logoContainer.style.display = "block";
 	footer.style.display = "block";
@@ -143,11 +128,12 @@ function init()
 	sessionContainer.style.display = "none";
 	videoContainer.style.display = "none";
 	controlContainer.style.display = "none";
+	buttonRecord.style.filter = "grayscale(100%)";
 	callButton.disabled = true;
 	
 	// If no session is specified, hide call container
 	if(!sessionId) callContainer.style.display = "none";
-	
+
 	if(active)
 	{
 		// If no session is specified, show session selector
@@ -172,16 +158,41 @@ function init()
 };
 
 window.onload = function() {
+	// Get elements ids
+        selfView = document.getElementById("self_view");
+        remoteView = document.getElementById("remote_view");
+        logoContainer = document.getElementById("logo_container");
+        sessionContainer = document.getElementById("session_container");
+        sessionText = document.getElementById("session_text");
+        sessionButton = document.getElementById("session_button");
+        callContainer = document.getElementById("call_container");
+        callButton = document.getElementById("call_button");
+        videoContainer  = document.getElementById("video_container");
+        controlContainer = document.getElementById("control_container");
+        arrowUp    = document.getElementById("arrow_up");
+        arrowDown  = document.getElementById("arrow_down");
+        arrowLeft  = document.getElementById("arrow_left");
+        arrowRight = document.getElementById("arrow_right");
+        buttonRecord = document.getElementById("button_record");
+        footer = document.getElementById("footer");
+
+        // Initialize
+        init();	
+
 	// Check WebRTC is available
-	if(!navigator.mediaDevices.getUserMedia) {
+	if(!navigator.mediaDevices.getUserMedia || !RTCPeerConnection) {
 		displayMessage("Browser not compatible");
 		clearTimeout(displayMessageTimeout);
 		return;
 	}
 	
-	// Initialize
-	init();
-	
+	// By default, call button ask for media
+	if(active) {
+		callButton.onclick = function() {
+			displayMessage("Access to media device not allowed");
+		};
+	}
+
 	// Get a local stream
 	var constraints = { audio: true, video: true }; 
 	navigator.mediaDevices.getUserMedia(constraints)
@@ -194,7 +205,7 @@ window.onload = function() {
 			selfView.onloadedmetadata = function(evt) {
 				selfView.play();
 			};
-
+			
 			if(active) {
 				// If active, call button triggers peerJoin()
 				callButton.onclick = function() {
@@ -211,11 +222,19 @@ window.onload = function() {
 			logError(err);
 			callContainer.style.display = "none";
 			sessionContainer.style.display = "none";
-			displayMessage("Service not available");
+			displayMessage("Media device not available");
 			clearTimeout(displayMessageTimeout);
 		});
 	
 	if(active) {
+		// Request notification permission
+		if(Notification && Notification.permission != 'granted')
+		{
+			Notification.requestPermission(function(permission) {
+				console.log(permission);
+			});
+		}
+
 		// Handle mouse down on arrows
 		arrowUp.onmousedown = function (evt) {
 			evt.preventDefault();
@@ -431,7 +450,8 @@ function peerJoin() {
 			signaling = null;
 			peerConnection = null;
 			peer = null;
-			
+			remoteStream = null;		
+	
 			// Hide videos and display call container
 			remoteView.style.visibility = "hidden";
 			videoContainer.style.display = "none";
@@ -515,29 +535,39 @@ function start(isInitiator) {
 	footer.style.display = "none";
 	
 	// Create peer connection with the given configuration
-	peerConnection = new RTCPeerConnection(configuration);
+	peerConnection = new RTCPeerConnection(rtcConfiguration);
 	
 	// Send all ICE candidates to peer
 	peerConnection.onicecandidate = function (evt) {
 		if (evt.candidate) {
-		peer.send(JSON.stringify({
-			"candidate": evt.candidate.candidate,
-			"sdpMLineIndex": evt.candidate.sdpMLineIndex
-		}));
-		console.log("Candidate emitted: " + evt.candidate.candidate);
+			peer.send(JSON.stringify({
+				"candidate": evt.candidate.candidate,
+				"sdpMLineIndex": evt.candidate.sdpMLineIndex
+			}));
+			console.log("Candidate emitted: " + evt.candidate.candidate);
 		}
 	};
 	
-	// Once we get the remote stream, show it
+	// Once we get the remote stream
 	peerConnection.onaddstream = function (evt) {
-		remoteView.srcObject = evt.stream;
+		remoteStream = evt.stream;
+		
+		// Set remote view
+		remoteView.srcObject = remoteStream;
 		remoteView.style.visibility = "visible";
 		remoteView.onloadedmetadata = function(evt) {
 			remoteView.play();
 		};
 
-		if(active) controlContainer.style.display = "block";
-		sendOrientationUpdate();
+		if(active) {
+			// Display controls
+			controlContainer.style.display = "block";
+		
+			// Set recording button
+			buttonRecord.onclick = function() {
+				startRecording();
+			};
+		}
 	};
 	
 	// Add local stream
@@ -596,6 +626,68 @@ function updateControl() {
 	}
 }
 
+// Start recording of remote stream
+function startRecording() {
+	if(!remoteStream) return;
+
+	record(remoteStream)
+		.then(function(data) {
+			var mimeType = recorder.mimeType || "video/webm";
+			var blob = new Blob(data, { type: mimeType });
+			var a = document.createElement("a");
+			document.body.appendChild(a);
+			a.style = "display: none";
+			a.href = URL.createObjectURL(blob);
+			a.download = "telebot_" + dateString(new Date()) + "." + mimeType.split('/')[1];
+			a.click();
+			URL.revokeObjectURL(blob);
+			document.body.removeChild(a);
+
+			buttonRecord.style.filter = "grayscale(100%)";
+			buttonRecord.onclick = function() {
+				startRecording();
+			}
+		});
+	
+	buttonRecord.style.filter = "none";
+	buttonRecord.onclick = function() {
+		if(recorder && recorder.state != "inactive") {
+			recorder.stop();
+		}
+		else {
+			buttonRecord.style.filter = "grayscale(100%)";
+			buttonRecord.onclick = function() {
+				startRecording();
+			}
+		}
+	};
+}
+
+// Record a media stream
+function record(stream) {
+	recorder = new MediaRecorder(stream, recorderOptions);
+	
+	var data = [];
+	recorder.ondataavailable = function(evt) {
+		data.push(evt.data);
+	};
+
+	recorder.start(1000);
+ 
+	var finished = new Promise(function(resolve, reject) {
+		recorder.onstop = resolve;
+		recorder.onerror = function(evt) {
+			logError("MediaRecorder: " + evt.name);
+			if(data.length) resolve();
+			else reject(evt.name);
+		};
+	});
+
+	return finished.then(function() { 
+		return data;
+	});
+}
+
 // Display a message
 function displayMessage(msg) {
 	var element = document.getElementById("message");
@@ -613,6 +705,14 @@ function displayMessage(msg) {
 // Display current status
 function displayStatus(msg) {
 	document.getElementById("status").textContent = msg;
+}
+
+// Format date as YYYY-MM-DD-HHMMSS
+function dateString(date)
+{
+	var d = new Date(date);
+	return d.getFullYear() + '-' + ('0'+(d.getMonth()+1)).slice(-2) + '-' + ('0'+d.getDate()).slice(-2)
+		+ '-' + ('0'+d.getHours()).slice(-2) + ('0' + d.getMinutes()).slice(-2) + ('0'+d.getSeconds()).slice(-2);
 }
 
 // Log error
