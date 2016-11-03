@@ -247,7 +247,6 @@ public class TelebotActivity extends Activity implements
         public SerialThread(BluetoothSocket socket) throws IOException {
             mInStream = socket.getInputStream();
             mOutStream = socket.getOutputStream();
-            //writeln("M 255");
         }
 
         public void run() {

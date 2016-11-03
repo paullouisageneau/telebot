@@ -40,6 +40,7 @@ const int motorLeftEnablePin    = 5;
 const int motorRightBackwardPin = 7;
 const int motorRightForwardPin  = 4;
 const int motorRightEnablePin   = 6;
+const int batteryProbePin       = A0;
 
 SoftwareSerial bluetooth(8, 9); // TX, RX
 
@@ -54,8 +55,10 @@ const long calibrationMillis = 2000L;
 const long k1 = 1000L;	// Adjust k1 and k2 depending on motors
 const long k2 = 400L;
 
-int motorMin = 40;	// Adjust min and max depending on motors
-int motorMax = 255;
+long controlFactor = 1000L; // Adjust factor depending on motors
+
+const int motorMin = 64;
+const int motorMax = 255;
 
 // -------------------------------
 
@@ -139,7 +142,7 @@ void loop(void)
 {
   oldmicros = micros();
   
-  int batteryVoltage = int(long((analogRead(A0))*batteryProbeFactor)/1000L);  // mV
+  int batteryVoltage = int(long((analogRead(batteryProbePin))*batteryProbeFactor)/1000L);  // mV
   int batteryPercent = constrain(map(batteryVoltage, 3200, 4200, 0, 100), 0, 100);
 
   // Read commands on bluetooth serial
@@ -159,16 +162,16 @@ void loop(void)
         while(pos < inputString.length() && inputString[pos] == ' ') ++pos;
         param = inputString.substring(pos);
 
+        int value = 0;
         switch(cmd)
         {
-        case 'M': // max
-          motorMax = constrain(param.toInt(), 0, 255);
-          break;
         case 'L': // left
-          tempLeftPower = constrain(param.toInt(), -100, 100)*10;
+          value = constrain(param.toInt(), -100, 100)*10;
+          tempLeftPower = int(long(value)*controlFactor/1000L);
           break;
         case 'R': // right
-          tempRightPower = constrain(param.toInt(), -100, 100)*10;
+          value = constrain(param.toInt(), -100, 100)*10;
+          tempRightPower = int(long(value)*controlFactor/1000L);
           break;
         case 'C': // commit
           commandLeftPower  = tempLeftPower;
@@ -255,9 +258,10 @@ void loop(void)
     }
     else {
       // Update idle input values
-      const long gamma = 10000L;
-      rotx0 = (rotx0*(gamma-1) + rotx)/gamma;
-      accz0 = (accz0*(gamma-1) + accz)/gamma;
+      const long gamma1 = 10000L;
+      const long gamma2 = 10000L;
+      rotx0 = (rotx0*(gamma1-1) + rotx)/gamma1;
+      accz0 = (accz0*(gamma2-1) + accz)/gamma2;
       
       // Center inputs
       rotx = rotx - rotx0;

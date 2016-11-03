@@ -570,8 +570,8 @@ function updateControl() {
 		right+= 1;
 	}
 	if(controlDown) {
-		left += -1;
-		right+= -1;
+		left += -0.75;
+		right+= -0.75;
 	}
 	if(controlLeft) {
 		left = Math.min(left  - 0.50, 0);
