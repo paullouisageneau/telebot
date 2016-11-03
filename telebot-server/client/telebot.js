@@ -96,13 +96,14 @@ function init()
 	if(hash && hash[0] == '_') {
 		// Leading '_' enables passive mode
 		if(!sessionStorage.mode) sessionStorage.mode = 'passive';
-		window.location.href = window.location.href.split("#")[0] + '#' + hash.substr(1);
-		return;
+		hash = hash.substr(1);
+		window.location.href = window.location.href.split("#")[0] + '#' + hash;
 	}
+
 	if(!sessionStorage.mode) sessionStorage.mode = 'active';
 	active = (sessionStorage.mode != 'passive');
 	sessionId = hash;
-	userId = (active ? '' : '_') + Math.random().toString(16).substr(2);
+	if(!userId) userId = (active ? '' : '_') + Math.random().toString(16).substr(2);
 	
 	// If not active, switch to dark background
 	if(!active) {
@@ -177,7 +178,7 @@ window.onload = function() {
         footer = document.getElementById("footer");
 
         // Initialize
-        init();	
+        init();
 
 	// Check WebRTC is available
 	if(!navigator.mediaDevices.getUserMedia || !RTCPeerConnection) {
@@ -591,7 +592,8 @@ function localDescCreated(desc) {
 
 // Send new controls to peer
 function updateControl() {
-	if(controlContainer.style.display == "none") return;
+	if(controlContainer.style.display == "none")
+		return;
 	
 	var left  = 0;
 	var right = 0;
