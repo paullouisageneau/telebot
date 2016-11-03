@@ -142,7 +142,7 @@ void loop(void)
 {
   oldmicros = micros();
   
-  int batteryVoltage = int(long((analogRead(batteryProbePin))*batteryProbeFactor)/1000L);  // mV
+  int batteryVoltage = int(long(analogRead(batteryProbePin))*batteryProbeFactor/1000L);  // mV
   int batteryPercent = constrain(map(batteryVoltage, 3200, 4200, 0, 100), 0, 100);
 
   // Read commands on bluetooth serial
