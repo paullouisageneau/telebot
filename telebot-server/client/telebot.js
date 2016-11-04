@@ -26,27 +26,27 @@
 
 // WebRTC configuration
 var rtcConfiguration = {
-  rtcpMuxPolicy: "require",
-  bundlePolicy: "balanced",
-  iceServers: [
-  {
-    "url": "stun:stun.ageneau.net:3478"
-  },
-  {
-      "url": "turn:stun.ageneau.net:3478",
-      "credential": "982364878597767",
-      "username": "telebot"
-  }
-  ]
+	rtcpMuxPolicy: "require",
+	bundlePolicy: "balanced",
+	iceServers: [
+	{
+		url: "stun:stun.ageneau.net:3478"
+	},
+	{
+		url: "turn:stun.ageneau.net:3478",
+		credential: "982364878597767",
+		username: "telebot"
+	}]
 };
 
 // Media recorder options
 var recorderOptions = {
-	mimeType : 'video/webm',
-	audioBitsPerSecond :   64000,	// sufficient for OPUS
-	videoBitsPerSecond :  640000	// 500-1000Kbps should be OK
+	mimeType: 'video/webm',
+	audioBitsPerSecond:  64000,	// sufficient for Opus
+	videoBitsPerSecond: 640000	// 500-1000Kbps should be OK
 };
 
+// Global variables
 var active = true;
 var sessionId = '';
 var userId = '';
@@ -78,15 +78,15 @@ var controlRight = false;
 var oldStatus = 'online';
 var displayMessageTimeout = null;
 
-// Set orientation to 0 if not defined
-if(!window.hasOwnProperty("orientation"))
-	window.orientation = 0;
-
 // Get prefixed objects
-var Notification = window.Notification || window.webkitNotification || window.mozNotification;
-var RTCPeerConnection = window.RTCPeerConnection || window.webkitRTCPeerConnection || window.mozRTCPeerConnection;
-var RTCSessionDescription = window.RTCSessionDescription || window.webkitRTCSessionDescription || window.mozRTCSessionDescription;
-var RTCIceCandidate = window.RTCIceCandidate || window.webkitRTCIceCandidate || window.mozRTCIceCandidate;
+window.Notification = window.Notification || window.webkitNotification || window.mozNotification;
+window.RTCPeerConnection = window.RTCPeerConnection || window.webkitRTCPeerConnection || window.mozRTCPeerConnection;
+window.RTCSessionDescription = window.RTCSessionDescription || window.webkitRTCSessionDescription || window.mozRTCSessionDescription;
+window.RTCIceCandidate = window.RTCIceCandidate || window.webkitRTCIceCandidate || window.mozRTCIceCandidate;
+navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+
+// Set orientation to 0 if not defined
+window.orientation = window.orientation || 0;
 
 // Initialization function
 function init()
@@ -714,7 +714,7 @@ function dateString(date)
 {
 	var d = new Date(date);
 	return d.getFullYear() + '-' + ('0'+(d.getMonth()+1)).slice(-2) + '-' + ('0'+d.getDate()).slice(-2)
-		+ '-' + ('0'+d.getHours()).slice(-2) + ('0' + d.getMinutes()).slice(-2) + ('0'+d.getSeconds()).slice(-2);
+		+ '-' + ('0'+d.getHours()).slice(-2) + ('0'+d.getMinutes()).slice(-2) + ('0'+d.getSeconds()).slice(-2);
 }
 
 // Log error
