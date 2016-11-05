@@ -53,7 +53,8 @@ var contentTypes = {
 	"png":  "image/png",
 	"jpg":  "image/jpeg",
 	"jpeg": "image/jpeg",
-	"gif":  "image/gif"
+	"gif":  "image/gif",
+	"apk":  "application/vnd.android.package-archive"
 };
 
 var defaultHeaders = {
@@ -159,9 +160,11 @@ var server = http.createServer(function (request, response) {
 		request.on("end", function() {
 			var json = JSON.parse(body);
 			if(json.control) {
-				peerId = botUserId;
-				if(!(peer = session.users[peerId]))
-					return;
+				// Redirect control to bot
+				if(session.users[botUserId]) {
+					peerId = botUserId;
+					peer = session.users[botUserId];
+				}
 			}
 			console.log("@" + sessionId + ": " + userId + " => " + peerId + " :");
 			console.log(body);
