@@ -258,8 +258,8 @@ void loop(void)
     }
     else {
       // Update idle input values
-      const long gamma1 = 10000L;
-      const long gamma2 = 10000L;
+      const long gamma1 = 1000L;
+      const long gamma2 = 1000L;
       rotx0 = (rotx0*(gamma1-1) + rotx)/gamma1;
       accz0 = (accz0*(gamma2-1) + accz)/gamma2;
       
