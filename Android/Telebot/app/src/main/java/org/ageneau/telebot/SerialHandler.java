@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2016, Paul-Louis Ageneau
+ * Copyright (c) 2015-2017, Paul-Louis Ageneau
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
@@ -37,6 +37,9 @@ import java.io.OutputStream;
 import java.util.Set;
 import java.util.UUID;
 
+/**
+ * Handle Bluetooth serial connection
+ */
 public class SerialHandler {
 
     private static final String TAG = "SerialHandler";

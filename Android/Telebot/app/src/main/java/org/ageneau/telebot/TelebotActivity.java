@@ -48,8 +48,9 @@ import java.util.Random;
  */
 public class TelebotActivity extends Activity  {
 
-    // Configuration
     private static final String TAG = "TelebotActivity";
+    
+    // Configuration
     private static final String URL = "https://telebot.ageneau.net";
     private static final String DEVICE_NAME = "Telebot";
     private static final int HTTP_SERVER_PORT = 11698;
