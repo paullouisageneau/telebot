@@ -164,6 +164,10 @@ function init()
 	}
 	else {
 		initLocalControl();
+		
+		document.body.onclick = function(evt) {
+			requestFullScreen(document.body);
+		}
 	}
 };
 
@@ -796,6 +800,19 @@ function dateString(date)
 	var d = new Date(date);
 	return d.getFullYear() + '-' + ('0'+(d.getMonth()+1)).slice(-2) + '-' + ('0'+d.getDate()).slice(-2)
 		+ '-' + ('0'+d.getHours()).slice(-2) + ('0'+d.getMinutes()).slice(-2) + ('0'+d.getSeconds()).slice(-2);
+}
+
+// Switch element to fullscreen mode
+function requestFullScreen(element)
+{
+    if (element.requestFullscreen)
+        element.requestFullscreen();
+    else if (element.msRequestFullscreen)
+        element.msRequestFullscreen();
+    else if (element.mozRequestFullScreen)
+        element.mozRequestFullScreen();
+    else if (element.webkitRequestFullscreen)
+        element.webkitRequestFullscreen();
 }
 
 // Log error
