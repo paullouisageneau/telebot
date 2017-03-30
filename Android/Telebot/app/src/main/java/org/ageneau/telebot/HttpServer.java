@@ -212,7 +212,7 @@ public class HttpServer implements Runnable {
     }
 
     /**
-     * Process a request, should be overrided in subclasses
+     * Process a request, should be overridden in subclasses
      */
     public JSONObject process(String method, String route, JSONObject content) throws Exception {
         return null;
