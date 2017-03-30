@@ -35,6 +35,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
@@ -88,7 +89,7 @@ public class HttpServer implements Runnable {
     public void run() {
         try {
             // Open the server socket
-            mServerSocket = new ServerSocket(mPort);
+            mServerSocket = new ServerSocket(mPort, 0, InetAddress.getByName(null));
             
             // Loop on accepted connections
             while(true) {
