@@ -9,3 +9,4 @@ https://chapelierfou.org/2016/09/a-telepresence-robot-building/
 
 https://chapelierfou.org/2016/09/a-telepresence-robot-programming/
 
+https://chapelierfou.org/2017/03/a-telepresence-robot-enhancements/
