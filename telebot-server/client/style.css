@@ -29,6 +29,7 @@ video {
 #container {
         clear: both;
         margin: 0;
+	text-align: center;
 }
 #video_container {
 	display: none;
@@ -106,6 +107,7 @@ video {
 #footer a {
 	color: #606060;
 }
+
 .button {
 	border: 1px solid #CCCCCC;
 	box-shadow: #FEFFFF 0px 1px 1px;

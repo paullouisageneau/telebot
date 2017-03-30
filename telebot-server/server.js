@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2014, Ericsson AB.
- * Copyright (c) 2015-2016, Paul-Louis Ageneau
+ * Copyright (c) 2015-2017, Paul-Louis Ageneau
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
@@ -33,8 +33,7 @@ var path = require("path");
 var fs   = require("fs");
 
 var sessions = {};
-var usersInSessionLimit = 3;	// 2 + bot
-var botUserId = "telebot";
+var usersInSessionLimit = 2;
 
 var port = 8081;
 if (process.argv.length == 3)
@@ -92,8 +91,7 @@ var server = http.createServer(function (request, response) {
 		
 		var user = session.users[userId];
 		if(!user) {
-			if((userId != botUserId && !session.users[botUserId] && Object.keys(session.users).length >= usersInSessionLimit - 1)
-			|| (Object.keys(session.users).length >= usersInSessionLimit)) {
+			if(Object.keys(session.users).length >= usersInSessionLimit) {
 				console.log("@" + sessionId + ": Limit for session reached");
 				response.write("event:busy\ndata:" + sessionId + "\n\n");
 				clearTimeout(response.keepAliveTimer);
@@ -159,13 +157,6 @@ var server = http.createServer(function (request, response) {
 		});
 		request.on("end", function() {
 			var json = JSON.parse(body);
-			if(json.control) {
-				// Redirect control to bot
-				if(session.users[botUserId]) {
-					peerId = botUserId;
-					peer = session.users[botUserId];
-				}
-			}
 			console.log("@" + sessionId + ": " + userId + " => " + peerId + " :");
 			console.log(body);
 			var evtdata = "data:" + body.replace(/\n/g, "\ndata:") + "\n";
@@ -188,7 +179,7 @@ var server = http.createServer(function (request, response) {
 		response.writeHead(200, headers);
 
 		var session = sessions[sessionId];
-		var online = Boolean(session && session.users[botUserId]);
+		var online = Boolean(session && Object.keys(session.users).length == 1 && Object.keys(session.users)[0][0] == '_');
 		var busy = Boolean(session && Object.keys(session.users).length >= usersInSessionLimit);
 		
 		response.write(JSON.stringify({"session": sessionId, "status": (online ? (busy ? "busy" : "online") : "offline")}));

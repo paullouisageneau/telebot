@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2016, Paul-Louis Ageneau
+ * Copyright (c) 2015-2017, Paul-Louis Ageneau
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
@@ -46,12 +46,16 @@ var recorderOptions = {
 	videoBitsPerSecond: 640000	// 500-1000Kbps should be OK
 };
 
+// Local control API
+var localControlUrl = "http://127.0.0.1:11698/control";
+
 // Global variables
 var active = true;
 var sessionId = '';
 var userId = '';
 
 var signaling;
+var controlChannel;
 var peerConnection;
 var peer;
 var localStream;
@@ -68,6 +72,7 @@ var arrowUp;
 var arrowDown;
 var arrowLeft;
 var arrowRight;
+var logo;
 var footer;
 
 var controlUp    = false;
@@ -105,9 +110,8 @@ function init()
 	sessionId = hash;
 	if(!userId) userId = (active ? '' : '_') + Math.random().toString(16).substr(2);
 	
-	// If not active, switch to dark background
 	if(!active) {
-		var logo = document.getElementById("logo");
+		// If not active, switch to dark background
 		document.body.style.background = "#000000";
 		document.body.style.color = "#FFFFFF";
 		logo.style.visibility = "hidden";
@@ -117,8 +121,10 @@ function init()
 	
 	// Initialize everything
 	if(signaling) signaling.close();
+	if(controlChannel) controlChannel.close();
 	if(peerConnection) peerConnection.close();
 	signaling = null;
+	controlChannel = null;
 	peerConnection = null;
 	peer = null;
 	remoteStream = null;
@@ -156,29 +162,33 @@ function init()
 		// Refresh status
 		requestStatus();
 	}
+	else {
+		initLocalControl();
+	}
 };
 
 window.onload = function() {
 	// Get elements ids
-        selfView = document.getElementById("self_view");
-        remoteView = document.getElementById("remote_view");
-        logoContainer = document.getElementById("logo_container");
-        sessionContainer = document.getElementById("session_container");
-        sessionText = document.getElementById("session_text");
-        sessionButton = document.getElementById("session_button");
-        callContainer = document.getElementById("call_container");
-        callButton = document.getElementById("call_button");
-        videoContainer  = document.getElementById("video_container");
-        controlContainer = document.getElementById("control_container");
-        arrowUp    = document.getElementById("arrow_up");
-        arrowDown  = document.getElementById("arrow_down");
-        arrowLeft  = document.getElementById("arrow_left");
-        arrowRight = document.getElementById("arrow_right");
-        buttonRecord = document.getElementById("button_record");
-        footer = document.getElementById("footer");
+	selfView = document.getElementById("self_view");
+	remoteView = document.getElementById("remote_view");
+	logoContainer = document.getElementById("logo_container");
+	sessionContainer = document.getElementById("session_container");
+	sessionText = document.getElementById("session_text");
+	sessionButton = document.getElementById("session_button");
+	callContainer = document.getElementById("call_container");
+	callButton = document.getElementById("call_button");
+	videoContainer  = document.getElementById("video_container");
+	controlContainer = document.getElementById("control_container");
+	arrowUp    = document.getElementById("arrow_up");
+	arrowDown  = document.getElementById("arrow_down");
+	arrowLeft  = document.getElementById("arrow_left");
+	arrowRight = document.getElementById("arrow_right");
+	buttonRecord = document.getElementById("button_record");
+	logo = document.getElementById("logo");
+	footer = document.getElementById("footer");
 
-        // Initialize
-        init();
+	// Initialize
+	init();
 
 	// Check WebRTC is available
 	if(!navigator.mediaDevices.getUserMedia || !RTCPeerConnection) {
@@ -307,6 +317,10 @@ window.onload = function() {
 			requestStatus();
 		}, 10000);
 	}
+	else {
+		// Reset local control
+		localControl(0, 0);
+	}
 }
 
 window.onhashchange = function() {
@@ -317,10 +331,10 @@ window.onhashchange = function() {
 // Callback for status request
 function requestStatus() {
 	if(!sessionId) return;
-	var request = new XMLHttpRequest();
-	request.open('GET', "status/" + sessionId, true);
+	var xhr = new XMLHttpRequest();
+	xhr.open('GET', "status/" + sessionId, true);
 	
-	request.onload = function() {
+	xhr.onload = function() {
 		if (this.status >= 200 && this.status < 400) {
 			var data = JSON.parse(this.response);
 			var name = "Telebot \""+sessionId+"\"";
@@ -345,11 +359,11 @@ function requestStatus() {
 		}
 	};
 	
-	request.onerror = function() {
+	xhr.onerror = function() {
 		displayStatus("");
 	}
 	
-	request.send();
+	xhr.send();
 }
 
 // Callback for key down
@@ -422,7 +436,7 @@ function peerJoin() {
 			signaling.close();
 			signaling = null;
 			callButton.disabled = false;
-		}, 4000);
+		}, 5000);
 	}
 	
 	// Handle busy session
@@ -436,7 +450,7 @@ function peerJoin() {
 	
 	// Handle incoming peer
 	signaling.onpeer = function (evt) {
-		if(evt.userid == "telebot" || (active && evt.userid[0] != '_')) return;
+		if(active && evt.userid[0] != '_') return;
 		
 		if(timeout) clearTimeout(timeout);
 		peer = evt.peer;
@@ -522,7 +536,13 @@ function handleMessage(evt) {
 			var transform = "rotate(" + message.orientation + "deg)";
 			remoteView.style.transform = remoteView.style.webkitTransform = remoteView.style.mozTransform = transform;
 		}
-	} 
+	}
+	
+	if(message.control && !active) {
+		var left = parseInt(message.control.left);
+		var right = parseInt(message.control.right);
+		localControl(left, right);
+	}
 }
 
 // Initiate the session
@@ -573,9 +593,40 @@ function start(isInitiator) {
 	
 	// Add local stream
 	peerConnection.addStream(localStream);
+
+	if(active) {
+		// Create control data channel
+		var controlChannelOptions = {
+			ordered: true,
+		};
+		controlChannel = peerConnection.createDataChannel("control", controlChannelOptions);
+	}
+	else {
+		// Accept control data channel
+		peerConnection.ondatachannel = function(evt) {
+			if(evt.channel.label == "control") {
+				controlChannel = evt.channel;
+				controlChannel.onmessage = function(evt) {
+					var message = JSON.parse(evt.data);
+					if(message.control) {
+						var left = parseInt(message.control.left);
+						var right = parseInt(message.control.right);
+						localControl(left, right);
+					}
+				};
+				controlChannel.onerror = function(err) {
+					localControl(0, 0);
+				};
+				controlChannel.onclose = function() {
+					localControl(0, 0);
+				};
+			}
+		};
+	}
 	
-	if (isInitiator)
+	if(isInitiator) {
 		peerConnection.createOffer(localDescCreated, logError);
+	}
 }
 
 // Handle local session description
@@ -617,14 +668,19 @@ function updateControl() {
 	var power = 100;
 	left  = Math.min(Math.max(left,  -1), 1)*power;
 	right = Math.min(Math.max(right, -1), 1)*power;
-	
-	if(peer) {
-		peer.send(JSON.stringify({ 
-			"control": {
-				"left": left,
-				"right": right
-			}
-		}));
+
+	var message = JSON.stringify({ 
+		"control": {
+			"left": left,
+			"right": right
+		}
+	});
+
+	if(controlChannel && controlChannel.readyState == "open") {
+		controlChannel.send(message);
+	}
+	else {
+		if(peer) peer.send(message);
 	}
 }
 
@@ -678,10 +734,10 @@ function record(stream) {
  
 	var finished = new Promise(function(resolve, reject) {
 		recorder.onstop = resolve;
-		recorder.onerror = function(evt) {
-			logError("MediaRecorder: " + evt.name);
+		recorder.onerror = function(err) {
+			logError("MediaRecorder: " + err.name);
 			if(data.length) resolve();
-			else reject(evt.name);
+			else reject(err.name);
 		};
 	});
 
@@ -702,6 +758,31 @@ function displayMessage(msg) {
 		
 	element.textContent = msg;
 	element.innerHTML = element.innerHTML.replace(/\n\r?/g, '<br>');
+}
+
+// Init local API
+function initLocalControl() {
+	var xhr = new XMLHttpRequest();
+	xhr.open("POST", localControlUrl, true);
+	xhr.setRequestHeader('Content-Type', 'application/json');
+	xhr.onerror = function(err) {
+		window.location.href = "https://telebot.ageneau.net/upgrade.html";
+	};
+	xhr.send(JSON.stringify({
+		"left": 0,
+		"right": 0
+	}));
+}
+
+// Send control to local API
+function localControl(left, right) {
+	var xhr = new XMLHttpRequest();
+	xhr.open("POST", localControlUrl, true);
+	xhr.setRequestHeader('Content-Type', 'application/json');
+	xhr.send(JSON.stringify({
+		"left": left,
+		"right": right
+	}));
 }
 
 // Display current status
