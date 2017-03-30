@@ -601,7 +601,7 @@ function start(isInitiator) {
 	if(active) {
 		// Create control data channel
 		var controlChannelOptions = {
-			ordered: true,
+			ordered: true
 		};
 		controlChannel = peerConnection.createDataChannel("control", controlChannelOptions);
 	}
