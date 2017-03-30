@@ -89,7 +89,7 @@ public class HttpServer implements Runnable {
     public void run() {
         try {
             // Open the server socket
-            mServerSocket = new ServerSocket(mPort, 0, InetAddress.getByName(null));
+            mServerSocket = new ServerSocket(mPort);
             
             // Loop on accepted connections
             while(true) {
@@ -178,7 +178,7 @@ public class HttpServer implements Runnable {
                 return;
             }
 
-            if (content == null) {
+            if (response == null) {
                 sendResponse(output, "404 Not Found", false);
                 return;
             }
