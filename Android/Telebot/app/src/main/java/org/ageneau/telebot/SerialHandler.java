@@ -47,6 +47,9 @@ public class SerialHandler {
     private String mAddress;
     private SerialThread mSerialThread;
 
+    /**
+     * Find Bluetooth device from name and connect serial
+     */
     public SerialHandler(BluetoothAdapter adapter, String deviceName) throws IOException {
 
         mBtAdapter = adapter;
@@ -85,6 +88,9 @@ public class SerialHandler {
             throw new IOException("Unable to connect Bluetooth device");
     }
 
+    /**
+     * Close serial
+     */
     public void close() {
         try {
             if(mBtSocket != null) {
@@ -98,11 +104,16 @@ public class SerialHandler {
         mSerialThread = null;
     }
 
+    /**
+     * Get device MAC address
+     */
     public String getAddress() {
         return mAddress;
     }
 
-    // Send motor control command, values are in percent
+    /**
+     * Send motor control command, values are in percent
+     */
     public void setControl(int left, int right) {
         if(mSerialThread != null) {
             mSerialThread.writeln("L " + left);  // left
@@ -111,7 +122,9 @@ public class SerialHandler {
         }
     }
 
-    // Thread handling the BluetoothSocket
+    /**
+     * Thread handling the BluetoothSocket
+     */
     private class SerialThread extends Thread {
         private InputStream mInStream;
         private OutputStream mOutStream;

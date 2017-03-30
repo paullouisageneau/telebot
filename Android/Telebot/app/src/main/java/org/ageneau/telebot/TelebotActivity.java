@@ -43,8 +43,12 @@ import java.io.IOException;
 import java.util.Locale;
 import java.util.Random;
 
+/**
+ * Telebot activity
+ */
 public class TelebotActivity extends Activity  {
 
+    // Configuration
     private static final String TAG = "TelebotActivity";
     private static final String URL = "https://telebot.ageneau.net";
     private static final String DEVICE_NAME = "Telebot";
@@ -118,6 +122,9 @@ public class TelebotActivity extends Activity  {
         }
     }
 
+    /**
+     * Connect Bluetooth device, launch background HTTP server, and launch browser
+     */
     private void launch() {
         // Get the Bluetooth adapter
         mBtAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -178,6 +185,9 @@ public class TelebotActivity extends Activity  {
         });
     }
 
+    /**
+     * Display error message and exit
+     */
     private void exit(final String message) {
         // Display error on screen
         runOnUiThread(new Runnable() {

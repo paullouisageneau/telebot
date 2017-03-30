@@ -28,11 +28,17 @@ package org.ageneau.telebot;
 
 import org.json.JSONObject;
 
+/**
+ * Specialized HTTP serial to handle control requests
+ */
 public class SerialHttpServer extends HttpServer {
 
     private SerialHandler mHandler;
-    private int mLeft, mRight;
+    private int mLeft, mRight;          // Current controls
 
+    /**
+     * Create server for specified port and serial handler
+     */
     public SerialHttpServer(int port, SerialHandler handler) {
         super(port);
         mHandler = handler;
@@ -41,12 +47,18 @@ public class SerialHttpServer extends HttpServer {
         mRight = 0;
     }
 
+    /**
+     * Start the server
+     */
     @Override
     public void start()
     {
         super.start();
     }
 
+    /**
+     * Stop the server
+     */
     @Override
     public void stop()
     {
@@ -54,6 +66,9 @@ public class SerialHttpServer extends HttpServer {
         mHandler.close();
     }
 
+    /**
+     * Process a control request
+     */
     @Override
     public JSONObject process(String method, String route, JSONObject content) throws Exception {
 
