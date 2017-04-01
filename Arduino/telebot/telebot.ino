@@ -72,6 +72,7 @@ long accz0 = 0L;
 long acczl = 0L;
 long angx  = 0L;
 
+// Current motor controls
 int motorRightPower   = 0;
 int motorLeftPower    = 0;
 int commandRightPower = 0;
@@ -81,6 +82,7 @@ int tempLeftPower     = 0;
 
 int batteryProbeCount = 0;
 
+// Set right motor power in [-1000, 1000]
 void motorRight(int power)
 {
   if(abs(power) < 100) power = 0;
@@ -91,6 +93,7 @@ void motorRight(int power)
   else analogWrite(motorRightEnablePin, 0);
 }
 
+// Set left motor power in [-1000, 1000]
 void motorLeft(int power)
 {
   if(abs(power) < 100) power = 0;
@@ -101,6 +104,7 @@ void motorLeft(int power)
   else analogWrite(motorLeftEnablePin, 0);
 }
 
+// Init I2C connection
 void initWire(void)
 {
 #ifdef USE_SOFTI2C
