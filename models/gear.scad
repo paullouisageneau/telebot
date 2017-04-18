@@ -19,23 +19,23 @@
 // Wheel gear
 
 radius = 20-0.25;
-height = 5;
+thickness = 5;
 gap = 4;
 d = 3;
 
-translate([0,0,height/2]) union() {
+translate([0,0,thickness/2]) union() {
     difference() {
-        gear(radius, height, d);
-        cylinder(h=height+10, r=radius-5, center=true, $fn=90);
+        gear(radius, thickness, d);
+        cylinder(h=thickness+10, r=radius-5, center=true, $fn=90);
     }
     
     difference() {
         union() {
-            cube([radius*2,5,height], center=true);
-            cube([5,radius*2,height], center=true);
-            translate([0,0,-height/2]) cylinder(h=height+gap, r=5, center=false, $fn=90);
+            cube([radius*2,5,thickness], center=true);
+            cube([5,radius*2,thickness], center=true);
+            translate([0,0,-thickness/2]) cylinder(h=thickness+gap, r=5, center=false, $fn=90);
         }
-        cylinder(h=height+15, r=1.5, center=true, $fn=15);
+        cylinder(h=thickness+15, r=1.5, center=true, $fn=15);
     }
 }
 

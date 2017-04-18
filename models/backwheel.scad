@@ -20,21 +20,21 @@
 
 axis_radius = 5;
 radius = 55-10;
-height = 10;
+thickness = 10;
 gap = 5;
 
 union() {
     difference() {
-        cylinder(h=height, r=radius+5, center=true, $fn=360);
-        cylinder(h=height+10, r=radius-5, center=true, $fn=360);
+        cylinder(h=thickness, r=radius+5, center=true, $fn=360);
+        cylinder(h=thickness+10, r=radius-5, center=true, $fn=360);
     }
     
     difference() {
         union() {
-            cube([radius*2,10,height], center=true);
-            cube([10,radius*2,height], center=true);
-            translate([0,0,gap/2]) cylinder(h=height+gap, r=axis_radius+3, center=true, $fn=90);
+            cube([radius*2,10,thickness], center=true);
+            cube([10,radius*2,thickness], center=true);
+            translate([0,0,gap/2]) cylinder(h=thickness+gap, r=axis_radius+3, center=true, $fn=90);
         }
-        cylinder(h=height+gap+gap/2+10, r=axis_radius+0.75, center=true, $fn=90);
+        cylinder(h=thickness+gap+gap/2+10, r=axis_radius+0.75, center=true, $fn=90);
     }
 }
