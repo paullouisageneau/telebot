@@ -129,8 +129,10 @@ public class TelebotActivity extends Activity  {
     private void launch() {
         // Get the Bluetooth adapter
         mBtAdapter = BluetoothAdapter.getDefaultAdapter();
-        if(mBtAdapter == null)
-            exit("Bluetooth support is required.");
+        if(mBtAdapter == null) {
+            finishWithError("Bluetooth support is required.");
+            return;
+        }
 
         // Check if Bluetooth is enabled
         if(!mBtAdapter.isEnabled()) {
@@ -142,16 +144,17 @@ public class TelebotActivity extends Activity  {
 
         Log.d(TAG, "Bluetooth is enabled");
 
+        final TelebotActivity activity = this;
         AsyncTask.execute(new Runnable() {
             @Override
             public void run() {
                 // Connect the Bluetooth device
                 SerialHandler handler;
                 try {
-                    handler = new SerialHandler(mBtAdapter, DEVICE_NAME);
+                    handler = new SerialHandler(activity, mBtAdapter, DEVICE_NAME);
                 } catch (IOException e) {
                     e.printStackTrace();
-                    exit("Unable to connect to the Bluetooth device. Please check it is paired.");
+                    finishWithError("Unable to connect to the Bluetooth device. Please check it is paired.");
                     return;
                 }
 
@@ -179,7 +182,7 @@ public class TelebotActivity extends Activity  {
                         startActivityForResult(i, BROWSER_REQUEST_CODE);
                     }
                 } catch (ActivityNotFoundException e) {
-                    exit("You need to install Google Chrome or Mozilla Firefox.");
+                    finishWithError("You need to install Google Chrome or Mozilla Firefox.");
                     return;
                 }
             }
@@ -187,17 +190,25 @@ public class TelebotActivity extends Activity  {
     }
 
     /**
-     * Display error message and exit
+     * Display a message
      */
-    private void exit(final String message) {
-        // Display error on screen
+    public void displayMessage(String message) {
+        final String msg = message;
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                Toast toast = Toast.makeText(getBaseContext(), "Error: " + message, Toast.LENGTH_LONG);
+                Toast toast = Toast.makeText(getBaseContext(), msg, Toast.LENGTH_LONG);
                 toast.show();
             }
         });
+    }
+
+    /**
+     * Display an error message and schedule termination
+     */
+    public void finishWithError(String message) {
+        // Display error on screen
+        displayMessage("Error: " + message);
 
         // Log error
         Log.e(TAG, message);

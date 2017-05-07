@@ -45,20 +45,35 @@ public class SerialHandler {
     private static final String TAG = "SerialHandler";
     private static final UUID SPP_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
 
-    private BluetoothAdapter mBtAdapter;
+    private final TelebotActivity mActivity;
+    private final BluetoothAdapter mBtAdapter;
+    private String mDeviceName;
+
     private BluetoothSocket mBtSocket;
-    private String mAddress;
     private SerialThread mSerialThread;
+    private String mDeviceAddress;
+
+    /**
+     * Constructor, set Bluetooth adapter and connect serial on device
+     */
+    public SerialHandler(TelebotActivity acticity, BluetoothAdapter adapter, String deviceName) throws IOException {
+
+        mActivity = acticity;
+        mBtAdapter = adapter;
+	
+	    // Connect device
+        connect(deviceName);
+    }
 
     /**
      * Find Bluetooth device from name and connect serial
      */
-    public SerialHandler(BluetoothAdapter adapter, String deviceName) throws IOException {
+    public void connect(String deviceName) throws IOException {
 
-        mBtAdapter = adapter;
-
+	    mDeviceName = deviceName;
+    
         // Check if Bluetooth is enabled
-        if(mBtAdapter == null || !mBtAdapter.isEnabled())
+        if(!mBtAdapter.isEnabled())
             throw new IOException("Bluetooth adapter is not enabled");
 
         // Look for Bluetooth device
@@ -66,8 +81,11 @@ public class SerialHandler {
         for(BluetoothDevice device : pairedDevices) {
             if(device.getName().equals(deviceName)) {
                 try {
-                    Log.d(TAG, "Found Bluetooth device ");
+                    Log.d(TAG, "Bluetooth device found");
 
+                    // Retrieve address
+                    mDeviceAddress = device.getAddress();
+                    
                     // Connect serial port on device
                     mBtSocket = device.createInsecureRfcommSocketToServiceRecord(SPP_UUID);
                     mBtSocket.connect();
@@ -76,9 +94,6 @@ public class SerialHandler {
                     // Create thread
                     mSerialThread = new SerialThread(mBtSocket);
                     mSerialThread.start();
-
-                    // Retrieve address
-                    mAddress = device.getAddress();
                     break;
                 }
                 catch (IOException e) {
@@ -89,8 +104,14 @@ public class SerialHandler {
 
         if(mSerialThread == null)
             throw new IOException("Unable to connect Bluetooth device");
-    }
 
+        // Reset control
+        setControl(0, 0);
+
+	    // Ask for battery status
+        mSerialThread.writeln("B");
+    }
+    
     /**
      * Close serial
      */
@@ -104,6 +125,7 @@ public class SerialHandler {
 
         }
 
+        mBtSocket = null;
         mSerialThread = null;
     }
 
@@ -111,17 +133,32 @@ public class SerialHandler {
      * Get device MAC address
      */
     public String getAddress() {
-        return mAddress;
+        return mDeviceAddress;
     }
 
     /**
      * Send motor control command, values are in percent
      */
     public void setControl(int left, int right) {
+
+        boolean success = false;
         if(mSerialThread != null) {
-            mSerialThread.writeln("L " + left);  // left
-            mSerialThread.writeln("R " + right); // right
-            mSerialThread.writeln("C");          // commit
+            success = mSerialThread.writeln("L " + left);  // left
+            success&= mSerialThread.writeln("R " + right); // right
+            success&= mSerialThread.writeln("C");          // commit
+        }
+
+        if(!success) {
+            try {
+                // Try to reconnect
+                connect(mDeviceName);
+            }
+            catch(Exception e) {
+                Log.w(TAG, "Unable to reconnect to Bluetooth device");
+                return;
+            }
+
+            setControl(left, right);    // retry
         }
     }
 
@@ -137,6 +174,7 @@ public class SerialHandler {
             mOutStream = socket.getOutputStream();
         }
 
+        // Reception loop
         public void run() {
             if(mInStream == null) return;
             try {
@@ -145,7 +183,13 @@ public class SerialHandler {
                 int chr;
                 while((chr = mInStream.read()) >= 0) {
                     if(chr == '\n') {
-                        Log.d(TAG, "Received: " + line);
+			try {
+				Log.d(TAG, "Received: " + line);
+				process(line.toString());
+			}
+			catch(Exception e) {
+				e.printStackTrace();
+			}
                         line.setLength(0);
                     }
                     else {
@@ -158,16 +202,44 @@ public class SerialHandler {
             }
         }
 
+        // Process received lines
+        private void process(String line) {
+
+            if (line == null || line.isEmpty())
+                return;
+
+            char cmd = line.charAt(0);
+            String param = (line.length() >= 2 && line.charAt(1) == ' ' ? line.substring(2) : line.substring(1));
+
+            switch (cmd) {
+                case 'B':
+                    int percent = Integer.parseInt(param);
+                    mActivity.displayMessage("Battery: " + percent + " %");
+                    break;
+
+                default:
+                    Log.d(TAG, "Unknown command \"" + cmd + "\"");
+                    break;
+            }
+        }
+        
         // Write line on Bluetooth serial
-        public void writeln(String line) {
+        public boolean writeln(String line) {
             try {
-                if(mOutStream != null) mOutStream.write((line + '\n').getBytes());
-                Thread.sleep(10);
+                if(mOutStream != null)
+                    mOutStream.write((line + '\n').getBytes());
             } catch (IOException e) {
                 Log.d(TAG, "Sending failed: " + e.getMessage());
+                return false;
+            }
+
+            try {
+                Thread.sleep(10);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+
+            return true;
         }
     }
 }
