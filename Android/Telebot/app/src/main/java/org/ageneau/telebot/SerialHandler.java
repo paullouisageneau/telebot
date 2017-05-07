@@ -60,8 +60,8 @@ public class SerialHandler {
 
         mActivity = acticity;
         mBtAdapter = adapter;
-	
-	    // Connect device
+
+        // Connect device
         connect(deviceName);
     }
 
@@ -141,14 +141,16 @@ public class SerialHandler {
      */
     public void setControl(int left, int right) {
 
-        boolean success = false;
-        if(mSerialThread != null) {
-            success = mSerialThread.writeln("L " + left);  // left
-            success&= mSerialThread.writeln("R " + right); // right
-            success&= mSerialThread.writeln("C");          // commit
-        }
+        while(true) {
+            boolean success = false;
+            if(mSerialThread != null) {
+                success = mSerialThread.writeln("L " + left);  // left
+                success&= mSerialThread.writeln("R " + right); // right
+                success&= mSerialThread.writeln("C");          // commit
+            }
 
-        if(!success) {
+            if(success) return;
+
             try {
                 // Try to reconnect
                 connect(mDeviceName);
@@ -157,8 +159,6 @@ public class SerialHandler {
                 Log.w(TAG, "Unable to reconnect to Bluetooth device");
                 return;
             }
-
-            setControl(left, right);    // retry
         }
     }
 
