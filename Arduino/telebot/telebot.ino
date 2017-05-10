@@ -52,7 +52,7 @@ const long stepMillis = 10L;
 const long calibrationMillis = 2000L;
 
 // ----------- Motors ------------
-const long k1 = 1000L;	// Adjust k1 and k2 depending on motors
+const long k1 = 2000L;	// Adjust k1 and k2 depending on motors
 const long k2 = 400L;
 
 long controlFactor = 1000L; // Adjust factor depending on motors
