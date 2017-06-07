@@ -35,7 +35,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
@@ -73,11 +72,11 @@ public class HttpServer implements Runnable {
      */
     public void stop() {
         try {
-            if (mServerSocket != null) {
+            if(mServerSocket != null) {
                 mServerSocket.close();
                 mServerSocket = null;
             }
-        } catch (IOException e) {
+        } catch(IOException e) {
             e.printStackTrace();
         }
     }
@@ -95,11 +94,10 @@ public class HttpServer implements Runnable {
             while(true) {
                 Socket socket = mServerSocket.accept();
                 handle(socket);
-                socket.close();
             }
-        } catch (SocketException e) {
+        } catch(SocketException e) {
             // Stopped
-        } catch (IOException e) {
+        } catch(IOException e) {
             e.printStackTrace();
         }
     }
@@ -107,7 +105,7 @@ public class HttpServer implements Runnable {
     /**
      * Receive an HTTP request and send the response
      */
-    private void handle(Socket socket) throws IOException {
+    private void handle(Socket socket) {
         BufferedReader reader = null;
         PrintStream output = null;
         try {
@@ -130,7 +128,7 @@ public class HttpServer implements Runnable {
             // Read the headers
             Map<String, String> headers = new HashMap<>();
             String line;
-            while (!(line = reader.readLine()).isEmpty()) {
+            while(!(line = reader.readLine()).isEmpty()) {
                 String[] s = line.split(":", 2);
                 headers.put(s[0].trim(), (s.length == 2 ? s[1].trim() : ""));
             }
@@ -149,7 +147,7 @@ public class HttpServer implements Runnable {
 
                 try {
                     content = new JSONObject(new String(buffer));
-                } catch (JSONException e) {
+                } catch(JSONException e) {
                     e.printStackTrace();
                 }
             }
@@ -171,14 +169,13 @@ public class HttpServer implements Runnable {
             JSONObject response;
             try {
                 response = process(method, route, content);
-            }
-            catch(Exception e) {
+            } catch(Exception e) {
                 e.printStackTrace();
                 sendResponse(output, "500 Internal Server Error", false);
                 return;
             }
 
-            if (response == null) {
+            if(response == null) {
                 sendResponse(output, "404 Not Found", false);
                 return;
             }
@@ -191,10 +188,18 @@ public class HttpServer implements Runnable {
             output.print("\r\n");
             output.write(b);
             output.flush();
-        }
+            
+        } catch(IOException e) {
+            e.printStackTrace();
+        } 
         finally {
-            if(output != null) output.close();
-            if(reader != null) reader.close();
+            try {
+                if(output != null) output.close();
+                if(reader != null) reader.close();
+                socket.close();
+            } catch(IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
