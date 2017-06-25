@@ -674,15 +674,15 @@ function updateControl() {
 		right+= 1;
 	}
 	if(controlDown) {
-		left += -0.75;
-		right+= -0.75;
+		left += -0.70;
+		right+= -0.70;
 	}
 	if(controlLeft) {
 		left = Math.min(left  - 0.50, 0);
-		right= Math.max(right + 0.25, 0);
+		right= Math.max(right + 0.30, 0);
 	}
 	if(controlRight) {
-		left = Math.max(left  + 0.25, 0);
+		left = Math.max(left  + 0.30, 0);
 		right= Math.min(right - 0.50, 0);
 	}
 	
