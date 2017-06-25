@@ -326,7 +326,7 @@ window.onload = function() {
 				if(buttonSpeed.style.filter != "none")
 					buttonSpeed.style.filter = "none";
 				else buttonSpeed.style.filter = "grayscale(100%)";
-			}
+			};
 		}
 		
 		// Set status callback
