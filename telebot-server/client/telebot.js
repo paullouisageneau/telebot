@@ -137,9 +137,9 @@ function init()
 	sessionContainer.style.display = "none";
 	videoContainer.style.display = "none";
 	controlContainer.style.display = "none";
-	buttonRecord.style.filter = "grayscale(100%)";
-	buttonSpeed.style.filter = "grayscale(100%)";
 	callButton.disabled = true;
+	if(buttonRecord) buttonRecord.style.filter = "grayscale(100%)";
+	if(buttonSpeed) buttonSpeed.style.filter = "grayscale(100%)";
 	
 	// If no session is specified, hide call container
 	if(!sessionId) callContainer.style.display = "none";
@@ -321,10 +321,12 @@ window.onload = function() {
 		document.onkeyup = handleKeyUp;
 		
 		// Set speed button
-		buttonSpeed.onclick = function() {
-			if(buttonSpeed.style.filter != "none")
-				buttonSpeed.style.filter = "none";
-			else buttonSpeed.style.filter = "grayscale(100%)";
+		if(buttonSpeed) {
+			buttonSpeed.onclick = function() {
+				if(buttonSpeed.style.filter != "none")
+					buttonSpeed.style.filter = "none";
+				else buttonSpeed.style.filter = "grayscale(100%)";
+			}
 		}
 		
 		// Set status callback
@@ -602,7 +604,7 @@ function start(isInitiator) {
 			controlContainer.style.display = "block";
 		
 			// Set recording button
-			buttonRecord.onclick = function() {
+			if(buttonRecord) buttonRecord.onclick = function() {
 				startRecording();
 			};
 		}
@@ -684,7 +686,7 @@ function updateControl() {
 		right= Math.min(right - 0.50, 0);
 	}
 	
-	var power = (buttonSpeed.style.filter == "none" ? 100 : 50);
+	var power = (buttonSpeed && buttonSpeed.style.filter != "none" ? 50 : 100);
 	left  = Math.round(Math.min(Math.max(left,  -1), 1)*power);
 	right = Math.round(Math.min(Math.max(right, -1), 1)*power);
 
@@ -720,24 +722,28 @@ function startRecording() {
 			URL.revokeObjectURL(blob);
 			document.body.removeChild(a);
 
-			buttonRecord.style.filter = "grayscale(100%)";
-			buttonRecord.onclick = function() {
-				startRecording();
+			if(buttonRecord) {
+				buttonRecord.style.filter = "grayscale(100%)";
+				buttonRecord.onclick = function() {
+					startRecording();
+				};
 			}
 		});
 	
-	buttonRecord.style.filter = "none";
-	buttonRecord.onclick = function() {
-		if(recorder && recorder.state != "inactive") {
-			recorder.stop();
-		}
-		else {
-			buttonRecord.style.filter = "grayscale(100%)";
-			buttonRecord.onclick = function() {
-				startRecording();
+	if(buttonRecord) {
+		buttonRecord.style.filter = "none";
+		buttonRecord.onclick = function() {
+			if(recorder && recorder.state != "inactive") {
+				recorder.stop();
 			}
-		}
-	};
+			else {
+				buttonRecord.style.filter = "grayscale(100%)";
+				buttonRecord.onclick = function() {
+					startRecording();
+				};
+			}
+		};
+	}
 }
 
 // Record a media stream
