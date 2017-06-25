@@ -685,13 +685,13 @@ function updateControl() {
 	}
 	
 	var power = (buttonSpeed.style.filter == "none" ? 100 : 50);
-	left  = Math.min(Math.max(left,  -1), 1)*power;
-	right = Math.min(Math.max(right, -1), 1)*power;
+	left  = Math.round(Math.min(Math.max(left,  -1), 1)*power);
+	right = Math.round(Math.min(Math.max(right, -1), 1)*power);
 
 	var message = JSON.stringify({ 
 		"control": {
-			"left": Math.round(left),
-			"right": Math.round(right)
+			"left": left,
+			"right": right
 		}
 	});
 
