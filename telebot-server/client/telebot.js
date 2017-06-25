@@ -541,7 +541,7 @@ function handleMessage(evt) {
 			.then(function() {
 				// If this is an offer, answer it
 				if(peerConnection.remoteDescription.type == "offer")
-					peerConnection.createAnswer(localDescCreated).catch(logError);
+					peerConnection.createAnswer().then(localDescCreated).catch(logError);
 			})
 			.catch(logError);
 	}
