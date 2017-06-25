@@ -251,28 +251,28 @@ window.onload = function() {
 		}
 
 		// Handle mouse down on arrows
-		arrowUp.onmousedown = function (evt) {
+		arrowUp.onmousedown = function(evt) {
 			evt.preventDefault();
 			if(!controlUp) {
 				controlUp = true;
 				updateControl();
 			}
 		};
-		arrowDown.onmousedown = function (evt) {
+		arrowDown.onmousedown = function(evt) {
 			evt.preventDefault();
 			if(!controlDown) {
 				controlDown = true;
 				updateControl();
 			}
 		};
-		arrowLeft.onmousedown = function (evt) {
+		arrowLeft.onmousedown = function(evt) {
 			evt.preventDefault();
 			if(!controlLeft) {
 				controlLeft = true;
 				updateControl();
 			}
 		};
-		arrowRight.onmousedown = function (evt) {
+		arrowRight.onmousedown = function(evt) {
 			evt.preventDefault();
 			if(!controlRight) {
 				controlRight = true;
@@ -281,19 +281,19 @@ window.onload = function() {
 		};
 		
 		// Handle mouse up on arrows
-		arrowUp.onmouseup = function (evt) {
+		arrowUp.onmouseup = function(evt) {
 			controlUp = false;
 			updateControl();
 		};
-		arrowDown.onmouseup = function (evt) {
+		arrowDown.onmouseup = function(evt) {
 			controlDown = false;
 			updateControl();
 		};
-		arrowLeft.onmouseup = function (evt) {
+		arrowLeft.onmouseup = function(evt) {
 			controlLeft = false;
 			updateControl();
 		};
-		arrowRight.onmouseup = function (evt) {
+		arrowRight.onmouseup = function(evt) {
 			controlRight = false;
 			updateControl();
 		};
@@ -453,7 +453,7 @@ function peerJoin() {
 	};
 	
 	// Handle incoming peer
-	signaling.onpeer = function (evt) {
+	signaling.onpeer = function(evt) {
 		if(active && evt.userid[0] != '_') return;
 		
 		if(timeout) clearTimeout(timeout);
@@ -490,7 +490,7 @@ function peerJoin() {
 		};
 		
 		// Send orientation changes to peer
-		/*window.onorientationchange = function () {
+		/*window.onorientationchange = function() {
 			if(peer) peer.send(JSON.stringify({ "orientation": window.orientation }));
 		};*/
 		
@@ -503,7 +503,7 @@ function peerJoin() {
 	};
 	
 	// Properly close signaling channel is window is closed
-	window.onbeforeunload = function () {
+	window.onbeforeunload = function() {
 		if(signaling) signaling.close();
 		signaling = null;
 		return null;
@@ -524,15 +524,17 @@ function handleMessage(evt) {
 			"type": message.type
 		});
 		// Set remote description
-		peerConnection.setRemoteDescription(description, function () {
-			// If this is an offer, answer it
-			if(peerConnection.remoteDescription.type == "offer")
-				peerConnection.createAnswer(localDescCreated, logError);
-		}, logError);
+		peerConnection.setRemoteDescription(description)
+			.then(function() {
+				// If this is an offer, answer it
+				if(peerConnection.remoteDescription.type == "offer")
+					peerConnection.createAnswer(localDescCreated).catch(logError);
+			})
+			.catch(logError);
 	}
 	
 	if(message.candidate) {
-		peerConnection.addIceCandidate(new RTCIceCandidate(message), function () {}, logError);
+		peerConnection.addIceCandidate(new RTCIceCandidate(message)).catch(logError);
 	}
 	
 	if(message.orientation) {
@@ -563,7 +565,7 @@ function start(isInitiator) {
 	peerConnection = new RTCPeerConnection(rtcConfiguration);
 	
 	// Send all ICE candidates to peer
-	peerConnection.onicecandidate = function (evt) {
+	peerConnection.onicecandidate = function(evt) {
 		if (evt.candidate) {
 			peer.send(JSON.stringify({
 				"candidate": evt.candidate.candidate,
@@ -574,7 +576,7 @@ function start(isInitiator) {
 	};
 	
 	// Once we get the remote stream
-	peerConnection.onaddstream = function (evt) {
+	peerConnection.onaddstream = function(evt) {
 		remoteStream = evt.stream;
 		
 		// Set remote view
@@ -629,20 +631,22 @@ function start(isInitiator) {
 	}
 	
 	if(isInitiator) {
-		peerConnection.createOffer(localDescCreated, logError);
+		peerConnection.createOffer(localDescCreated).catch(logError);
 	}
 }
 
 // Handle local session description
 function localDescCreated(desc) {
-	peerConnection.setLocalDescription(desc, function () {
-		peer.send(JSON.stringify({
-			"sdp": peerConnection.localDescription.sdp,
-			"type": peerConnection.localDescription.type
-		}));
-		var logMessage = "Local description sent, type: " + peerConnection.localDescription.type + ", sdp:\n" + peerConnection.localDescription.sdp;
-		console.log(logMessage);
-	}, logError);
+	peerConnection.setLocalDescription(desc)
+		.then(function() {
+			peer.send(JSON.stringify({
+				"sdp": peerConnection.localDescription.sdp,
+				"type": peerConnection.localDescription.type
+			}));
+			var logMessage = "Local description sent, type: " + peerConnection.localDescription.type + ", sdp:\n" + peerConnection.localDescription.sdp;
+			console.log(logMessage);
+		})
+		.catch(logError);
 }
 
 // Send new controls to peer
