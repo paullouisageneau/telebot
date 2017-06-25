@@ -690,8 +690,8 @@ function updateControl() {
 
 	var message = JSON.stringify({ 
 		"control": {
-			"left": left,
-			"right": right
+			"left": Math.round(left),
+			"right": Math.round(right)
 		}
 	});
 
