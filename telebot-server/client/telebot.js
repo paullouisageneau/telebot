@@ -30,10 +30,10 @@ var rtcConfiguration = {
 	bundlePolicy: "balanced",
 	iceServers: [
 	{
-		url: "stun:stun.ageneau.net:3478"
+		urls: "stun:stun.ageneau.net:3478"
 	},
 	{
-		url: "turn:stun.ageneau.net:3478",
+		urls: "turn:stun.ageneau.net:3478",
 		credential: "982364878597767",
 		username: "telebot"
 	}]
@@ -644,7 +644,7 @@ function start(isInitiator) {
 	}
 	
 	if(isInitiator) {
-		peerConnection.createOffer(localDescCreated).catch(logError);
+		peerConnection.createOffer().then(localDescCreated).catch(logError);
 	}
 }
 
