@@ -72,6 +72,8 @@ var arrowUp;
 var arrowDown;
 var arrowLeft;
 var arrowRight;
+var buttonRecord;
+var buttonSpeed;
 var logo;
 var footer;
 
@@ -136,6 +138,7 @@ function init()
 	videoContainer.style.display = "none";
 	controlContainer.style.display = "none";
 	buttonRecord.style.filter = "grayscale(100%)";
+	buttonSpeed.style.filter = "grayscale(100%)";
 	callButton.disabled = true;
 	
 	// If no session is specified, hide call container
@@ -188,6 +191,7 @@ window.onload = function() {
 	arrowLeft  = document.getElementById("arrow_left");
 	arrowRight = document.getElementById("arrow_right");
 	buttonRecord = document.getElementById("button_record");
+	buttonSpeed = document.getElementById("button_speed");
 	logo = document.getElementById("logo");
 	footer = document.getElementById("footer");
 
@@ -315,6 +319,13 @@ window.onload = function() {
 		// Set key callbacks
 		document.onkeydown = handleKeyDown;
 		document.onkeyup = handleKeyUp;
+		
+		// Set speed button
+		buttonSpeed.onclick = function() {
+			if(buttonSpeed.style.filter != "none")
+				buttonSpeed.style.filter = "none";
+			else buttonSpeed.style.filter = "grayscale(100%)";
+		}
 		
 		// Set status callback
 		setInterval(function() { 
@@ -673,7 +684,7 @@ function updateControl() {
 		right= Math.min(right - 0.50, 0);
 	}
 	
-	var power = 100;
+	var power = (buttonSpeed.style.filter == "none" ? 100 : 50);
 	left  = Math.min(Math.max(left,  -1), 1)*power;
 	right = Math.min(Math.max(right, -1), 1)*power;
 
