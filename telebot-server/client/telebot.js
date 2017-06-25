@@ -558,8 +558,8 @@ function handleMessage(evt) {
 	}
 	
 	if(message.control && !active) {
-		var left = parseInt(message.control.left);
-		var right = parseInt(message.control.right);
+		var left = Math.floor(message.control.left);
+		var right = Math.floor(message.control.right);
 		localControl(left, right);
 	}
 }
@@ -628,8 +628,8 @@ function start(isInitiator) {
 				controlChannel.onmessage = function(evt) {
 					var message = JSON.parse(evt.data);
 					if(message.control) {
-						var left = parseInt(message.control.left);
-						var right = parseInt(message.control.right);
+						var left = Math.floor(message.control.left);
+						var right = Math.floor(message.control.right);
 						localControl(left, right);
 					}
 				};
