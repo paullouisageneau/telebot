@@ -44,7 +44,7 @@ const int batteryProbePin       = A0;
 
 SoftwareSerial bluetooth(8, 9); // TX, RX
 
-const long batteryProbeFactor = 3912L;  // Adjust for another board
+const long batteryProbeFactor = 4888L;  // Adjust for another board
 //const long batteryProbeFactor = 4106L;
 
 // ----------- Timings -----------
