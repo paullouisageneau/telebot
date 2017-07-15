@@ -39,7 +39,7 @@ var port = 8081;
 if (process.argv.length == 3)
 	port = process.argv[2];
 
-var serverDir = path.dirname(__filename)
+var serverDir = path.dirname(__filename);
 var clientDir = path.join(serverDir, "client/");
 
 var contentTypes = {
