@@ -60,6 +60,8 @@ long controlFactor = 1000L; // Adjust factor depending on motors
 const int motorMin = 64;
 const int motorMax = 255;
 
+const int powerMin = 100;
+
 // -------------------------------
 
 unsigned long oldmicros = 0L;
@@ -85,7 +87,7 @@ int batteryProbeCount = 0;
 // Set right motor power in [-1000, 1000]
 void motorRight(int power)
 {
-  if(abs(power) < 100) power = 0;
+  if(abs(power) < powerMin) power = 0;
   power = constrain(power, -1000, 1000);
   digitalWrite(motorRightBackwardPin, (power < 0 ? HIGH : LOW));
   digitalWrite(motorRightForwardPin,  (power > 0 ? HIGH : LOW));
@@ -96,7 +98,7 @@ void motorRight(int power)
 // Set left motor power in [-1000, 1000]
 void motorLeft(int power)
 {
-  if(abs(power) < 100) power = 0;
+  if(abs(power) < powerMin) power = 0;
   power = constrain(power, -1000, 1000);
   digitalWrite(motorLeftBackwardPin, (power < 0 ? HIGH : LOW));
   digitalWrite(motorLeftForwardPin,  (power > 0 ? HIGH : LOW));
