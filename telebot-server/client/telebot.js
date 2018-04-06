@@ -28,8 +28,7 @@
 var rtcConfiguration = {
 	rtcpMuxPolicy: "require",
 	bundlePolicy: "balanced",
-	iceServers: [
-	{
+	iceServers: [{
 		urls: "stun:stun.ageneau.net:3478"
 	},
 	{
@@ -96,8 +95,7 @@ navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia 
 window.orientation = window.orientation || 0;
 
 // Initialization function
-function init()
-{
+function init() {
 	// Session and mode from hash
 	var hash = window.location.hash.substr(1);
 	if(hash && hash[0] == '_') {
@@ -816,16 +814,14 @@ function displayStatus(msg) {
 }
 
 // Format date as YYYY-MM-DD-HHMMSS
-function dateString(date)
-{
+function dateString(date) {
 	var d = new Date(date);
 	return d.getFullYear() + '-' + ('0'+(d.getMonth()+1)).slice(-2) + '-' + ('0'+d.getDate()).slice(-2)
 		+ '-' + ('0'+d.getHours()).slice(-2) + ('0'+d.getMinutes()).slice(-2) + ('0'+d.getSeconds()).slice(-2);
 }
 
 // Switch element to fullscreen mode
-function requestFullScreen(element)
-{
+function requestFullScreen(element) {
     if (element.requestFullscreen)
         element.requestFullscreen();
     else if (element.msRequestFullscreen)
