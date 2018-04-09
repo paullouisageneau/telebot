@@ -580,6 +580,7 @@ function start(isInitiator) {
 		if (evt.candidate) {
 			peer.send(JSON.stringify({
 				"candidate": evt.candidate.candidate,
+				"sdpMid": evt.candidate.sdpMid,
 				"sdpMLineIndex": evt.candidate.sdpMLineIndex
 			}));
 			console.log("Candidate emitted: " + evt.candidate.candidate);
