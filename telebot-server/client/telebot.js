@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017, Paul-Louis Ageneau
+ * Copyright (c) 2015-2018, Paul-Louis Ageneau
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
@@ -12,7 +12,7 @@
  * list of conditions and the following disclaimer in the documentation and/or other
  * materials provided with the distribution.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 'AS IS' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
  * IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
@@ -25,71 +25,64 @@
  */
 
 // WebRTC configuration
-var rtcConfiguration = {
-	rtcpMuxPolicy: "require",
-	bundlePolicy: "balanced",
+const rtcConfiguration = {
+	rtcpMuxPolicy: 'require',
+	bundlePolicy: 'balanced',
 	iceServers: [{
-		urls: "stun:stun.ageneau.net:3478"
+		urls: 'stun:stun.ageneau.net:3478'
 	},
 	{
-		urls: "turn:stun.ageneau.net:3478",
-		credential: "982364878597767",
-		username: "telebot"
+		urls: 'turn:stun.ageneau.net:3478',
+		credential: '982364878597767',
+		username: 'telebot'
 	}]
 };
 
 // Media recorder options
-var recorderOptions = {
+const recorderOptions = {
 	mimeType: 'video/webm',
 	audioBitsPerSecond:  64000,	// sufficient for Opus
 	videoBitsPerSecond: 640000	// 500-1000Kbps should be OK
 };
 
 // Local control API
-var localControlUrl = "http://127.0.0.1:11698/control";
+const localControlUrl = 'http://127.0.0.1:11698/control';
 
 // Global variables
-var active = true;
-var sessionId = '';
-var userId = '';
+let active = true;
+let sessionId = '';
+let userId = '';
 
-var signaling;
-var controlChannel;
-var peerConnection;
-var peer;
-var localStream;
-var remoteStream;
-var recorder;
+let signaling;
+let controlChannel;
+let peerConnection;
+let peer;
+let localStream;
+let remoteStream;
+let recorder;
 
-var selfView;
-var remoteView;
-var callButton;
-var callContainer;
-var videoContainer;
-var controlContainer;
-var arrowUp;
-var arrowDown;
-var arrowLeft;
-var arrowRight;
-var buttonRecord;
-var buttonSpeed;
-var logo;
-var footer;
+let selfView;
+let remoteView;
+let callButton;
+let callContainer;
+let videoContainer;
+let controlContainer;
+let arrowUp;
+let arrowDown;
+let arrowLeft;
+let arrowRight;
+let buttonRecord;
+let buttonSpeed;
+let logo;
+let footer;
 
-var controlUp    = false;
-var controlDown  = false;
-var controlLeft  = false;
-var controlRight = false;
+let controlUp    = false;
+let controlDown  = false;
+let controlLeft  = false;
+let controlRight = false;
 
-var oldStatus = 'online';
-var displayMessageTimeout = null;
-
-// Get prefixed objects
-window.Notification = window.Notification || window.webkitNotification || window.mozNotification;
-window.RTCPeerConnection = window.RTCPeerConnection || window.webkitRTCPeerConnection || window.mozRTCPeerConnection;
-window.RTCSessionDescription = window.RTCSessionDescription || window.webkitRTCSessionDescription || window.mozRTCSessionDescription;
-window.RTCIceCandidate = window.RTCIceCandidate || window.webkitRTCIceCandidate || window.mozRTCIceCandidate;
-navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+let oldStatus = 'online';
+let displayMessageTimeout = null;
 
 // Set orientation to 0 if not defined
 window.orientation = window.orientation || 0;
@@ -97,12 +90,12 @@ window.orientation = window.orientation || 0;
 // Initialization function
 function init() {
 	// Session and mode from hash
-	var hash = window.location.hash.substr(1);
+	let hash = window.location.hash.substr(1);
 	if(hash && hash[0] == '_') {
 		// Leading '_' enables passive mode
 		if(!sessionStorage.mode) sessionStorage.mode = 'passive';
 		hash = hash.substr(1);
-		window.location.href = window.location.href.split("#")[0] + '#' + hash;
+		window.location.href = `${window.location.href.split('#')[0]}#${hash}`;
 	}
 
 	if(!sessionStorage.mode) sessionStorage.mode = 'active';
@@ -112,11 +105,11 @@ function init() {
 	
 	if(!active) {
 		// If not active, switch to dark background
-		document.body.style.background = "#000000";
-		document.body.style.color = "#FFFFFF";
-		logo.style.visibility = "hidden";
-		footer.style.visibility = "hidden";
-		callButton.style.visibility = "hidden";
+		document.body.style.background = '#000000';
+		document.body.style.color = '#FFFFFF';
+		logo.style.visibility = 'hidden';
+		footer.style.visibility = 'hidden';
+		callButton.style.visibility = 'hidden';
 	}
 	
 	// Initialize everything
@@ -128,34 +121,34 @@ function init() {
 	peerConnection = null;
 	peer = null;
 	remoteStream = null;
-	remoteView.style.visibility = "hidden";
-	logoContainer.style.display = "block";
-	footer.style.display = "block";
-	callContainer.style.display = "block";
-	sessionContainer.style.display = "none";
-	videoContainer.style.display = "none";
-	controlContainer.style.display = "none";
+	remoteView.style.visibility = 'hidden';
+	logoContainer.style.display = 'block';
+	footer.style.display = 'block';
+	callContainer.style.display = 'block';
+	sessionContainer.style.display = 'none';
+	videoContainer.style.display = 'none';
+	controlContainer.style.display = 'none';
 	callButton.disabled = true;
-	if(buttonRecord) buttonRecord.style.filter = "grayscale(100%)";
-	if(buttonSpeed) buttonSpeed.style.filter = "grayscale(100%)";
+	if(buttonRecord) buttonRecord.style.filter = 'grayscale(100%)';
+	if(buttonSpeed) buttonSpeed.style.filter = 'grayscale(100%)';
 	
 	// If no session is specified, hide call container
-	if(!sessionId) callContainer.style.display = "none";
+	if(!sessionId) callContainer.style.display = 'none';
 
-	if(active)
-	{
+	if(active) {
 		// If no session is specified, show session selector
 		if(!sessionId) {
-			sessionContainer.style.display = "block";
-			sessionButton.onclick = function() {
-				window.location.href = window.location.href.split("#")[0] + '#' +  encodeURIComponent(sessionText.value);
+			sessionContainer.style.display = 'block';
+			sessionButton.onclick = () => {
+				hash = encodeURIComponent(sessionText.value);
+				window.location.href = `${window.location.href.split('#')[0]}#${hash}`;
 			};
-			sessionText.addEventListener("keyup", function(event) {
-				event.preventDefault();
-				if(event.keyCode == 13) {
+			sessionText.onkeyup = (evt) => {
+				evt.preventDefault();
+				if(evt.keyCode == 13) {
 					sessionButton.click();
 				}
-			});
+			};
 			sessionText.focus();
 			return;
 		}
@@ -164,68 +157,68 @@ function init() {
 		requestStatus();
 	}
 	else {
-		initLocalControl();
+		initLocalControl(); // Reset local control
 		
-		document.body.onclick = function(evt) {
+		document.body.onclick = () => {
 			requestFullScreen(document.body);
 		}
 	}
 };
 
-window.onload = function() {
+window.onload = () => {
 	// Get elements ids
-	selfView = document.getElementById("self_view");
-	remoteView = document.getElementById("remote_view");
-	logoContainer = document.getElementById("logo_container");
-	sessionContainer = document.getElementById("session_container");
-	sessionText = document.getElementById("session_text");
-	sessionButton = document.getElementById("session_button");
-	callContainer = document.getElementById("call_container");
-	callButton = document.getElementById("call_button");
-	videoContainer  = document.getElementById("video_container");
-	controlContainer = document.getElementById("control_container");
-	arrowUp    = document.getElementById("arrow_up");
-	arrowDown  = document.getElementById("arrow_down");
-	arrowLeft  = document.getElementById("arrow_left");
-	arrowRight = document.getElementById("arrow_right");
-	buttonRecord = document.getElementById("button_record");
-	buttonSpeed = document.getElementById("button_speed");
-	logo = document.getElementById("logo");
-	footer = document.getElementById("footer");
+	selfView = document.getElementById('self_view');
+	remoteView = document.getElementById('remote_view');
+	logoContainer = document.getElementById('logo_container');
+	sessionContainer = document.getElementById('session_container');
+	sessionText = document.getElementById('session_text');
+	sessionButton = document.getElementById('session_button');
+	callContainer = document.getElementById('call_container');
+	callButton = document.getElementById('call_button');
+	videoContainer  = document.getElementById('video_container');
+	controlContainer = document.getElementById('control_container');
+	arrowUp    = document.getElementById('arrow_up');
+	arrowDown  = document.getElementById('arrow_down');
+	arrowLeft  = document.getElementById('arrow_left');
+	arrowRight = document.getElementById('arrow_right');
+	buttonRecord = document.getElementById('button_record');
+	buttonSpeed = document.getElementById('button_speed');
+	logo = document.getElementById('logo');
+	footer = document.getElementById('footer');
 
 	// Initialize
 	init();
 
 	// Check WebRTC is available
 	if(!navigator.mediaDevices.getUserMedia || !RTCPeerConnection) {
-		displayMessage("Browser not compatible");
+		displayMessage('Browser not compatible');
 		clearTimeout(displayMessageTimeout);
 		return;
 	}
 	
 	// By default, call button ask for media
 	if(active) {
-		callButton.onclick = function() {
-			displayMessage("Access to media device not allowed");
+		callButton.onclick = () => {
+			displayMessage('Access to media device not allowed');
 		};
 	}
 
 	// Get a local stream
-	var constraints = { audio: true, video: true }; 
+	const constraints = { audio: true, video: true }; 
 	navigator.mediaDevices.getUserMedia(constraints)
-		.then(function(stream) {
+		.then((stream) => {
 			localStream = stream;
-
- 			// Set self view
- 			selfView.srcObject = stream;
-			selfView.style.visibility = "visible";
-			selfView.onloadedmetadata = function(evt) {
+			
+			// Set self view
+			selfView.srcObject = stream;
+			selfView.style.visibility = 'visible';
+			selfView.onloadedmetadata = () => {
 				selfView.play();
 			};
 			
 			if(active) {
 				// If active, call button triggers peerJoin()
-				callButton.onclick = function() {
+				callButton.onclick = () => {
 					callButton.disabled = true;
 					peerJoin();
 				};
@@ -235,46 +228,45 @@ window.onload = function() {
 				peerJoin();
 			}
 		})
-		.catch(function(err) { 
+		.catch((err) => { 
 			logError(err);
-			callContainer.style.display = "none";
-			sessionContainer.style.display = "none";
-			displayMessage("Media device not available");
+			callContainer.style.display = 'none';
+			sessionContainer.style.display = 'none';
+			displayMessage('Media device not available');
 			clearTimeout(displayMessageTimeout);
 		});
-	
+		
 	if(active) {
 		// Request notification permission
-		if(Notification && Notification.permission != 'granted')
-		{
-			Notification.requestPermission(function(permission) {
+		if(Notification && Notification.permission != 'granted') {
+			Notification.requestPermission((permission) => {
 				console.log(permission);
 			});
 		}
-
+		
 		// Handle mouse down on arrows
-		arrowUp.onmousedown = function(evt) {
+		arrowUp.onmousedown = (evt) => {
 			evt.preventDefault();
 			if(!controlUp) {
 				controlUp = true;
 				updateControl();
 			}
 		};
-		arrowDown.onmousedown = function(evt) {
+		arrowDown.onmousedown = (evt) => {
 			evt.preventDefault();
 			if(!controlDown) {
 				controlDown = true;
 				updateControl();
 			}
 		};
-		arrowLeft.onmousedown = function(evt) {
+		arrowLeft.onmousedown = (evt) => {
 			evt.preventDefault();
 			if(!controlLeft) {
 				controlLeft = true;
 				updateControl();
 			}
 		};
-		arrowRight.onmousedown = function(evt) {
+		arrowRight.onmousedown = (evt) => {
 			evt.preventDefault();
 			if(!controlRight) {
 				controlRight = true;
@@ -283,19 +275,19 @@ window.onload = function() {
 		};
 		
 		// Handle mouse up on arrows
-		arrowUp.onmouseup = function(evt) {
+		arrowUp.onmouseup = (evt) => {
 			controlUp = false;
 			updateControl();
 		};
-		arrowDown.onmouseup = function(evt) {
+		arrowDown.onmouseup = (evt) => {
 			controlDown = false;
 			updateControl();
 		};
-		arrowLeft.onmouseup = function(evt) {
+		arrowLeft.onmouseup = (evt) => {
 			controlLeft = false;
 			updateControl();
 		};
-		arrowRight.onmouseup = function(evt) {
+		arrowRight.onmouseup = (evt) => {
 			controlRight = false;
 			updateControl();
 		};
@@ -320,25 +312,21 @@ window.onload = function() {
 		
 		// Set speed button
 		if(buttonSpeed) {
-			buttonSpeed.onclick = function() {
-				if(buttonSpeed.style.filter != "none")
-					buttonSpeed.style.filter = "none";
-				else buttonSpeed.style.filter = "grayscale(100%)";
+			buttonSpeed.onclick = () => {
+				if(buttonSpeed.style.filter != 'none')
+					buttonSpeed.style.filter = 'none';
+				else buttonSpeed.style.filter = 'grayscale(100%)';
 			};
 		}
 		
 		// Set status callback
-		setInterval(function() { 
+		setInterval(() => { 
 			requestStatus();
 		}, 10000);
 	}
-	else {
-		// Reset local control
-		localControl(0, 0);
-	}
 }
 
-window.onhashchange = function() {
+window.onhashchange = () => {
 	// Re-initialize
 	init();
 }
@@ -346,63 +334,61 @@ window.onhashchange = function() {
 // Callback for status request
 function requestStatus() {
 	if(!sessionId) return;
-	var xhr = new XMLHttpRequest();
-	xhr.open('GET', "status/" + sessionId, true);
 	
-	xhr.onload = function() {
-		if (this.status >= 200 && this.status < 400) {
-			var data = JSON.parse(this.response);
-			var name = "Telebot \""+sessionId+"\"";
+	fetch(`status/${sessionId}`)
+		.then((response) => {
+			if(!response.ok) throw Error(response.statusText);
+			return response.json();
+		})
+		.then((data) => {
+			const name = `Telebot '${sessionId}'`;
 			if(data.status == 'online') {
-				displayStatus(name+" is online !");
+				displayStatus(`${name} is online!`);
 				callButton.disabled = false;
 				if(Notification && oldStatus != 'online') {
-					var notif = new Notification("Telebot", {
-						body: name+" is now online !"
+					const notif = new Notification('Telebot', {
+						body: `${name} is now online!`
 					});
 				}
 			}
 			else if(data.status == 'busy') {
-				displayStatus(name+" is busy, please wait...");
+				displayStatus(`${name} is busy, please wait...`);
 				callButton.disabled = true;
 			}
 			else {
-				displayStatus(name+" is offline, please wait...");
+				displayStatus(`${name} is offline, please wait...`);
 				callButton.disabled = true;
 			}
 			oldStatus = data.status;
-		}
-	};
-	
-	xhr.onerror = function() {
-		displayStatus("");
-	}
-	
-	xhr.send();
+		})
+		.catch((err) => {
+			displayStatus('');
+			console.error(err);
+		});
 }
 
 // Callback for key down
 function handleKeyDown(evt) {
 	switch (evt.keyCode) {
-	case 37:	// left
+	case 37: // left
 		if(!controlLeft) {
 			controlLeft = true;
 			updateControl();
 		}
 		break;
-	case 38:	// up
+	case 38: // up
 		if(!controlUp) {
 			controlUp = true;
 			updateControl();
 		}
 		break;
-	case 39:	// right
+	case 39: // right
 		if(!controlRight) {
 			controlRight = true;
 			updateControl();
 		}
 		break;
-	case 40:	// down
+	case 40: // down
 		if(!controlDown) {
 			controlDown = true;
 			updateControl();
@@ -414,19 +400,19 @@ function handleKeyDown(evt) {
 // Callback for key up
 function handleKeyUp(evt) {
 	switch (evt.keyCode) {
-	case 37:	// left
+	case 37: // left
 		controlLeft = false;
 		updateControl();
 		break;
-	case 38:	// up
+	case 38: // up
 		controlUp = false;
 		updateControl();
 		break;
-	case 39:	// right
+	case 39: // right
 		controlRight = false;
 		updateControl();
 		break;
-	case 40:	// down
+	case 40: // down
 		controlDown = false;
 		updateControl();
 		break;
@@ -436,18 +422,18 @@ function handleKeyUp(evt) {
 // Try to join peer
 function peerJoin() {
 	// This can be long, display proper message
-	if(active) displayMessage("Calling...");
-	else displayMessage("Ready\n\n"+sessionId);
+	if(active) displayMessage('Calling...');
+	else displayMessage('Ready\n\n'+sessionId);
 	
 	// Create signaling channel
 	signaling = new SignalingChannel(sessionId, userId);
 	
 	// Set unavailability timeout if active
-	var timeout = null;
+	let timeout = null;
 	if(active) {
-		timeout = setTimeout(function() {
+		timeout = setTimeout(() => {
 			requestStatus();
-			displayMessage("Unavailable");
+			displayMessage('Unavailable');
 			signaling.close();
 			signaling = null;
 			callButton.disabled = false;
@@ -455,66 +441,41 @@ function peerJoin() {
 	}
 	
 	// Handle busy session
-	signaling.onbusy = function(evt) {
+	signaling.onbusy = (evt) => {
 		if(active) requestStatus();
-		displayMessage("Busy, retry later");
+		displayMessage('Busy, retry later');
 		signaling.close();
 		signaling = null;
 		if(active) callButton.disabled = false;
 	};
 	
 	// Handle incoming peer
-	signaling.onpeer = function(evt) {
+	signaling.onpeer = (evt) => {
 		if(active && evt.userid[0] != '_') return;
 		
 		if(timeout) clearTimeout(timeout);
 		peer = evt.peer;
 		
-		// Handle signaling messages from peer
 		peer.onmessage = handleMessage;
-		
-		// Handle peer disconnection
-		peer.ondisconnect = function() {
-			signaling.close();
-			if (peerConnection) peerConnection.close();
-			signaling = null;
-			peerConnection = null;
-			peer = null;
-			remoteStream = null;		
-	
-			// Hide videos and display call container
-			remoteView.style.visibility = "hidden";
-			videoContainer.style.display = "none";
-			controlContainer.style.display = "none";
-			callContainer.style.display = "block";
-			logoContainer.style.display = "block";
-			footer.style.display = "block";
-			
-			if(active)
-			{
-				displayMessage("Disconnected");
-				callButton.disabled = false;
-			}
-			else {
-				peerJoin();
-			}
-		};
+		peer.ondisconnect = handleDisconnect;
 		
 		// Send orientation changes to peer
-		/*window.onorientationchange = function() {
-			if(peer) peer.send(JSON.stringify({ "orientation": window.orientation }));
+		/*window.onorientationchange = () => {
+			if(peer) peer.send(JSON.stringify({
+				orientation: window.orientation
+			}));
 		};*/
 		
 		// If active, schedule session initiation now
 		if(active) {
-			setTimeout(function() {
+			setTimeout(() => {
 				start(true);
 			}, 500);
 		}
 	};
 	
 	// Properly close signaling channel is window is closed
-	window.onbeforeunload = function() {
+	window.onbeforeunload = () => {
 		if(signaling) signaling.close();
 		signaling = null;
 		return null;
@@ -523,23 +484,27 @@ function peerJoin() {
 
 // Handle signaling messages received from peer
 function handleMessage(evt) {
-	var message = JSON.parse(evt.data);
+	const message = JSON.parse(evt.data);
 	
-	if(!peerConnection && (message.sdp || message.candidate))
+	if(!peerConnection && (message.sdp || message.candidate)) {
 		start(false);
+	}
 	
 	if(message.sdp) {
 		// Parse session description
-		var description = new RTCSessionDescription({
-			"sdp": message.sdp,
-			"type": message.type
+		const description = new RTCSessionDescription({
+			sdp: message.sdp,
+			type: message.type
 		});
 		// Set remote description
 		peerConnection.setRemoteDescription(description)
-			.then(function() {
+			.then(() => {
 				// If this is an offer, answer it
-				if(peerConnection.remoteDescription.type == "offer")
-					peerConnection.createAnswer().then(localDescCreated).catch(logError);
+				if(peerConnection.remoteDescription.type == 'offer') {
+					peerConnection.createAnswer()
+						.then(localDescCreated)
+						.catch(logError);
+				}
 			})
 			.catch(logError);
 	}
@@ -550,124 +515,149 @@ function handleMessage(evt) {
 	
 	if(message.orientation) {
 		if(remoteView) {
-			var transform = "rotate(" + message.orientation + "deg)";
-			remoteView.style.transform = remoteView.style.webkitTransform = remoteView.style.mozTransform = transform;
+			remoteView.style.transform = `rotate(${message.orientation}deg)`;
 		}
 	}
 	
 	if(message.control && !active) {
-		var left = Math.floor(message.control.left);
-		var right = Math.floor(message.control.right);
+		const left = Math.floor(message.control.left);
+		const right = Math.floor(message.control.right);
 		localControl(left, right);
+	}
+}
+
+function handleDisconnect() {
+	if(peerConnection) peerConnection.close();
+	if(signaling) signaling.close();
+	signaling = null;
+	peerConnection = null;
+	peer = null;
+	remoteStream = null;
+	
+	// Hide videos and display call container
+	remoteView.style.visibility = 'hidden';
+	videoContainer.style.display = 'none';
+	controlContainer.style.display = 'none';
+	callContainer.style.display = 'block';
+	logoContainer.style.display = 'block';
+	footer.style.display = 'block';
+	
+	if(active) {
+		displayMessage('Disconnected');
+		callButton.disabled = false;
+	}
+	else {
+		localControl(0, 0);
+		peerJoin();
 	}
 }
 
 // Initiate the session
 function start(isInitiator) {
 	// Clear message
-	displayMessage("");
+	displayMessage('');
 	
-	videoContainer.style.display = "block";
-	callContainer.style.display = "none";
-	logoContainer.style.display = "none";
-	footer.style.display = "none";
+	videoContainer.style.display = 'block';
+	callContainer.style.display = 'none';
+	logoContainer.style.display = 'none';
+	footer.style.display = 'none';
 	
 	// Create peer connection with the given configuration
 	peerConnection = new RTCPeerConnection(rtcConfiguration);
 	
 	// Send all ICE candidates to peer
-	peerConnection.onicecandidate = function(evt) {
+	peerConnection.onicecandidate = (evt) => {
 		if (evt.candidate) {
+			const { candidate, sdpMid, sdpMLineIndex } = evt.candidate;
 			peer.send(JSON.stringify({
-				"candidate": evt.candidate.candidate,
-				"sdpMid": evt.candidate.sdpMid,
-				"sdpMLineIndex": evt.candidate.sdpMLineIndex
+				candidate,
+				sdpMid,
+				sdpMLineIndex
 			}));
-			console.log("Candidate emitted: " + evt.candidate.candidate);
 		}
 	};
 	
 	// Once we get the remote stream
-	peerConnection.onaddstream = function(evt) {
-		remoteStream = evt.stream;
+	peerConnection.ontrack = (evt) => {
+		remoteStream = evt.streams[0];
 		
 		// Set remote view
 		remoteView.srcObject = remoteStream;
-		remoteView.style.visibility = "visible";
-		remoteView.onloadedmetadata = function(evt) {
+		remoteView.style.visibility = 'visible';
+		remoteView.onloadedmetadata = (evt) => {
 			remoteView.play();
 		};
 
 		if(active) {
 			// Display controls
-			controlContainer.style.display = "block";
+			controlContainer.style.display = 'block';
 		
 			// Set recording button
-			if(buttonRecord) buttonRecord.onclick = function() {
+			if(buttonRecord) buttonRecord.onclick = () => {
 				startRecording();
 			};
 		}
 	};
 	
 	// Add local stream
-	peerConnection.addStream(localStream);
+	for (const track of localStream.getTracks()) {
+		peerConnection.addTrack(track, localStream);
+	}
 
 	if(active) {
 		// Create control data channel
-		var controlChannelOptions = {
+		const controlChannelOptions = {
 			ordered: true
 		};
-		controlChannel = peerConnection.createDataChannel("control", controlChannelOptions);
+		controlChannel = peerConnection.createDataChannel('control', controlChannelOptions);
 	}
 	else {
 		// Accept control data channel
-		peerConnection.ondatachannel = function(evt) {
-			if(evt.channel.label == "control") {
+		peerConnection.ondatachannel = (evt) => {
+			if(evt.channel.label == 'control') {
 				controlChannel = evt.channel;
-				controlChannel.onmessage = function(evt) {
-					var message = JSON.parse(evt.data);
+				controlChannel.onmessage = (evt) => {
+					const message = JSON.parse(evt.data);
 					if(message.control) {
-						var left = Math.floor(message.control.left);
-						var right = Math.floor(message.control.right);
-						localControl(left, right);
+						const { left, right } = message.control;
+						localControl(Math.floor(left), Math.floor(right));
 					}
 				};
-				controlChannel.onerror = function(err) {
-					localControl(0, 0);
+				controlChannel.onerror = (err) => {
+					console.error(err);
+					handleDisconnect();
 				};
-				controlChannel.onclose = function() {
-					localControl(0, 0);
-				};
+				controlChannel.onclose = handleDisconnect;
 			}
 		};
 	}
 	
 	if(isInitiator) {
-		peerConnection.createOffer().then(localDescCreated).catch(logError);
+		peerConnection.createOffer()
+			.then(localDescCreated)
+			.catch(logError);
 	}
 }
 
 // Handle local session description
 function localDescCreated(desc) {
 	peerConnection.setLocalDescription(desc)
-		.then(function() {
+		.then(() => {
 			peer.send(JSON.stringify({
-				"sdp": peerConnection.localDescription.sdp,
-				"type": peerConnection.localDescription.type
+				sdp: peerConnection.localDescription.sdp,
+				type: peerConnection.localDescription.type
 			}));
-			var logMessage = "Local description sent, type: " + peerConnection.localDescription.type + ", sdp:\n" + peerConnection.localDescription.sdp;
-			console.log(logMessage);
 		})
 		.catch(logError);
 }
 
 // Send new controls to peer
 function updateControl() {
-	if(controlContainer.style.display == "none")
+	if(controlContainer.style.display == 'none')
 		return;
 	
-	var left  = 0;
-	var right = 0;
+	let left  = 0;
+	let right = 0;
 	if(controlUp) {
 		left += 1;
 		right+= 1;
@@ -685,18 +675,18 @@ function updateControl() {
 		right= Math.min(right - 0.50, 0);
 	}
 	
-	var power = (buttonSpeed && buttonSpeed.style.filter != "none" ? 50 : 100);
+	const power = (buttonSpeed && buttonSpeed.style.filter != 'none' ? 50 : 100);
 	left  = Math.round(Math.min(Math.max(left,  -1), 1)*power);
 	right = Math.round(Math.min(Math.max(right, -1), 1)*power);
 
-	var message = JSON.stringify({ 
-		"control": {
-			"left": left,
-			"right": right
+	const message = JSON.stringify({ 
+		control: {
+			left: left,
+			right: right
 		}
 	});
 
-	if(controlChannel && controlChannel.readyState == "open") {
+	if(controlChannel && controlChannel.readyState == 'open') {
 		controlChannel.send(message);
 	}
 	else {
@@ -709,35 +699,35 @@ function startRecording() {
 	if(!remoteStream) return;
 
 	record(remoteStream)
-		.then(function(data) {
-			var mimeType = recorder.mimeType || "video/webm";
-			var blob = new Blob(data, { type: mimeType });
-			var a = document.createElement("a");
+		.then((data) => {
+			const mimeType = recorder.mimeType || 'video/webm';
+			const blob = new Blob(data, { type: mimeType });
+			const a = document.createElement('a');
 			document.body.appendChild(a);
-			a.style = "display: none";
+			a.style = 'display: none';
 			a.href = URL.createObjectURL(blob);
-			a.download = "telebot_" + dateString(new Date()) + "." + mimeType.split('/')[1];
+			a.download = `telebot_${dateString(new Date())}.${mimeType.split('/')[1]}`;
 			a.click();
 			URL.revokeObjectURL(blob);
 			document.body.removeChild(a);
 
 			if(buttonRecord) {
-				buttonRecord.style.filter = "grayscale(100%)";
-				buttonRecord.onclick = function() {
+				buttonRecord.style.filter = 'grayscale(100%)';
+				buttonRecord.onclick = () => {
 					startRecording();
 				};
 			}
 		});
 	
 	if(buttonRecord) {
-		buttonRecord.style.filter = "none";
-		buttonRecord.onclick = function() {
-			if(recorder && recorder.state != "inactive") {
+		buttonRecord.style.filter = 'none';
+		buttonRecord.onclick = () => {
+			if(recorder && recorder.state != 'inactive') {
 				recorder.stop();
 			}
 			else {
-				buttonRecord.style.filter = "grayscale(100%)";
-				buttonRecord.onclick = function() {
+				buttonRecord.style.filter = 'grayscale(100%)';
+				buttonRecord.onclick = () => {
 					startRecording();
 				};
 			}
@@ -749,34 +739,34 @@ function startRecording() {
 function record(stream) {
 	recorder = new MediaRecorder(stream, recorderOptions);
 	
-	var data = [];
-	recorder.ondataavailable = function(evt) {
+	const data = [];
+	recorder.ondataavailable = (evt) => {
 		data.push(evt.data);
 	};
 
 	recorder.start(1000);
  
-	var finished = new Promise(function(resolve, reject) {
+	const finished = new Promise((resolve, reject) => {
 		recorder.onstop = resolve;
-		recorder.onerror = function(err) {
-			logError("MediaRecorder: " + err.name);
+		recorder.onerror = (err) => {
+			logError(`MediaRecorder: ${err.name}`);
 			if(data.length) resolve();
 			else reject(err.name);
 		};
 	});
 
-	return finished.then(function() { 
+	return finished.then(() => { 
 		return data;
 	});
 }
 
 // Display a message
 function displayMessage(msg) {
-	var element = document.getElementById("message");
+	const element = document.getElementById('message');
 	if(displayMessageTimeout) clearTimeout(displayMessageTimeout);
 	if(active) {
-		displayMessageTimeout = setTimeout(function() {
-			element.textContent = "";
+		displayMessageTimeout = setTimeout(() => {
+			element.textContent = '';
 		}, 10000);
 	}
 		
@@ -786,39 +776,55 @@ function displayMessage(msg) {
 
 // Init local API
 function initLocalControl() {
-	var xhr = new XMLHttpRequest();
-	xhr.open("POST", localControlUrl, true);
-	xhr.setRequestHeader('Content-Type', 'application/json');
-	xhr.onerror = function(err) {
-		window.location.href = "https://telebot.ageneau.net/upgrade.html";
-	};
-	xhr.send(JSON.stringify({
-		"left": 0,
-		"right": 0
-	}));
+	const body = JSON.stringify({
+		left: 0,
+		right: 0
+	});
+	fetch(localControlUrl, {
+		method: 'POST',
+		body: body,
+		headers: {
+			'Content-Type': 'application/json'
+		}
+	})
+	.then((response) => {
+		if(!response.ok) throw Error(response.statusText);
+	})
+	.catch((err) => {
+		window.location.href = 'https://telebot.ageneau.net/upgrade.html';
+	});
 }
 
 // Send control to local API
 function localControl(left, right) {
-	var xhr = new XMLHttpRequest();
-	xhr.open("POST", localControlUrl, true);
-	xhr.setRequestHeader('Content-Type', 'application/json');
-	xhr.send(JSON.stringify({
-		"left": left,
-		"right": right
-	}));
+	const body = JSON.stringify({
+		left: left,
+		right: right
+	});
+	fetch(localControlUrl, {
+		method: 'POST',
+		body: body,
+		headers: {
+			'Content-Type': 'application/json'
+		}
+	})
+	.then((response) => {
+		if(!response.ok) throw Error(response.statusText);
+	})
+	.catch((err) => {
+		console.log(err);
+	});
 }
 
 // Display current status
 function displayStatus(msg) {
-	document.getElementById("status").textContent = msg;
+	document.getElementById('status').textContent = msg;
 }
 
 // Format date as YYYY-MM-DD-HHMMSS
 function dateString(date) {
-	var d = new Date(date);
-	return d.getFullYear() + '-' + ('0'+(d.getMonth()+1)).slice(-2) + '-' + ('0'+d.getDate()).slice(-2)
-		+ '-' + ('0'+d.getHours()).slice(-2) + ('0'+d.getMinutes()).slice(-2) + ('0'+d.getSeconds()).slice(-2);
+	const d = new Date(date);
+	return `${d.getFullYear()}-${('0'+(d.getMonth()+1)).slice(-2)}-${('0'+d.getDate()).slice(-2)}-${('0'+d.getHours()).slice(-2)}${('0'+d.getMinutes()).slice(-2)}${('0'+d.getSeconds()).slice(-2)}`;
 }
 
 // Switch element to fullscreen mode
@@ -836,11 +842,11 @@ function requestFullScreen(element) {
 // Log error
 function logError(err) {
 	if(err) {
-		if(err.name && err.message) log(err.name + ": " + err.message);
+		if(err.name && err.message) log(`${err.name}: ${err.message}`);
 		else log(err);
 	}
 	else {
-		log("Unknown error");
+		log('Unknown error');
 	}
 }
 

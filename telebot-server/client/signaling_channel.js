@@ -13,7 +13,7 @@
  * list of conditions and the following disclaimer in the documentation and/or other
  * materials provided with the distribution.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 'AS IS' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
  * IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
@@ -28,112 +28,126 @@
 // This is a modified version of OpenWebRTC simple signaling channel
 // https://github.com/EricssonResearch/openwebrtc-examples/blob/master/web/client/signaling_channel.js
 
-function SignalingChannel(sessionId, userId) {
-	if(!sessionId) sessionId = createId();
-	if(!userId) userId = createId();
-	
-	var channels = {};
-	var listeners = {
-		"onpeer": null,
-		"onbusy": null
-	};
-	
-	for(var name in listeners)
-		Object.defineProperty(this, name, createEventListenerDescriptor(name, listeners));
-	
-	function createId() {
-		return Math.random().toString(16).substr(2);
-	};
-	
-	var es = new EventSource("stoc/" + sessionId + "/" + userId);
-	
-	this.close = function() {
-		es.close();
+// Simple signaling channel implementation
+class SignalingChannel {
+	constructor(sessionId, userId) {
+		this.sessionId = sessionId;
+		this.userId = userId;
+		this.onpeer = null;
+		this.onbusy = null;
+		this.channels = {};
+		
+		const es = new EventSource(`stoc/${sessionId}/${userId}`);
+		this.es = es;
+		
+		es.addEventListener('join', (evt) => {
+			const peerUserId = evt.data;
+			this.createPeer(peerUserId);
+		});
+		
+		es.addEventListener('leave', (evt) => {
+			const peerUserId = evt.data;
+			this.removePeer(peerUserId);
+		});
+		
+		es.addEventListener('busy', () => {
+			this.emitBusy();
+		});
+		
+		this.userDataCallback = (evt) => {
+			const peerUserId = evt.type.split('-')[1];
+			this.recv(peerUserId, evt.data);
+		};
 	}
 	
-	es.onerror = function() {
-		es.close();
-	};
-	
-	es.addEventListener("join", function (evt) {
-		var peerUserId = evt.data;
-		console.log("join: " + peerUserId);
-		var channel = new PeerChannel(peerUserId);
-		channels[peerUserId] = channel;
-		
-		es.addEventListener("user-" + peerUserId, userDataHandler, false);
-		fireEvent({ "type": "peer", "peer": channel, "userid": peerUserId }, listeners);
-	}, false);
-	
-	function userDataHandler(evt) {
-		var peerUserId = evt.type.substr(5); // discard "user-" part
-		var channel = channels[peerUserId];
-		if (channel)
-		channel.didGetData(evt.data);
+	createPeer(peerUserId) {
+		const channel = new PeerChannel(`ctos/${this.sessionId}/${this.userId}/${peerUserId}`);
+		this.channels[peerUserId] = channel;
+		this.es.addEventListener(`user-${peerUserId}`, this.userDataCallback);
+		this.emitPeer(peerUserId, channel);
 	}
 	
-	es.addEventListener("leave", function (evt) {
-		var peerUserId = evt.data;
-		
-		es.removeEventListener("user-" + peerUserId, userDataHandler, false);
-		
-		channels[peerUserId].didLeave();
-		delete channels[peerUserId];
-	}, false);
-	
-	es.addEventListener("busy", function () {
-		fireEvent({ "type": "busy" }, listeners);
-		es.close();
-	}, false);
-	
-	function PeerChannel(peerUserId) {
-		var listeners = {
-			"onmessage": null,
-			"ondisconnect": null
-		};
-		
-		for (var name in listeners)
-			Object.defineProperty(this, name, createEventListenerDescriptor(name, listeners));
-		
-		this.didGetData = function(data) {
-			fireEvent({"type": "message", "data": data }, listeners);
-		};
-		
-		this.didLeave = function() {
-			fireEvent({"type": "disconnect" }, listeners);
-		};
-		
-		var sendQueue = []
-		function processSendQueue() {
-			var xhr = new XMLHttpRequest();
-			xhr.open("POST", "ctos/" + sessionId + "/" + userId + "/" + peerUserId);
-			xhr.setRequestHeader("Content-Type", "text/plain");
-			xhr.send(sendQueue[0]);
-			xhr.onreadystatechange = function () {
-				if (xhr.readyState == xhr.DONE) {
-					sendQueue.shift();
-					if (sendQueue.length > 0) processSendQueue();
-				}
-			};
+	removePeer(peerUserId) {
+		this.es.removeEventListener(`user-${peerUserId}`, this.userDataCallback);
+		const channel = this.channels[peerUserId];
+		if(channel) {
+			channel.emitDisconnect();
+			delete this.channels[peerUserId];
 		}
-		
-		this.send = function (message) {
-		if (sendQueue.push(message) == 1)
-			processSendQueue();
-		};
 	}
 	
-	function createEventListenerDescriptor(name, listeners) {
-		return {
-			"get": function() { return listeners[name]; },
-			"set": function(cb) { listeners[name] = cb instanceof Function ? cb : null; },
-			"enumerable": true
-		};
+	recv(peerUserId, data) {
+		const channel = this.channels[peerUserId];
+		if(channel) channel.emitMessage(data);
 	}
 	
-	function fireEvent(evt, listeners) {
-		var listener = listeners["on" + evt.type]
-		if(listener) listener(evt);
+	send(peerUserId, data) {
+		const channel = this.channels[peerUserId];
+		if(channel) channel.send(data);
+	}
+	
+	emitPeer(peerUserId, channel) {
+		if(this.onpeer) this.onpeer({
+			type: 'peer',
+			peer: channel,
+			userid: peerUserId
+		});
+	}
+	
+	emitBusy() {
+		if(this.onbusy) this.onbusy({
+			type: 'busy'
+		});
+	}
+	
+	close() {
+		this.es.close();
 	}
 }
 
+// Simple signaling channel with a peer
+class PeerChannel {
+	constructor(url) {
+		this.url = url;
+		this.onmessage = null;
+		this.ondisconnect = null;
+		this.queue = [];
+	}
+	
+	send(message) {
+		if(this.queue.push(message) == 1) this._process();
+	}
+	
+	emitMessage(data) {
+		if(this.onmessage) this.onmessage({
+			type: 'message',
+			data: data
+		});
+	}
+	
+	emitDisconnect() {
+		if(this.ondisconnect) this.ondisconnect({
+			type: 'disconnect'
+		});
+	}
+	
+	_process() {
+		fetch(this.url, {
+			method: 'POST',
+			body: this.queue[0],
+			headers: {
+				'Content-Type': 'text/plain'
+			}
+		})
+		.then((response) => {
+			if(!response.ok) throw Error(response.statusText);
+		})
+		.catch((err) => {
+			console.error(err);
+		})
+		.finally(() => {
+			this.queue.shift();
+			if(this.queue.length > 0) this._process();
+		});
+	}
+}

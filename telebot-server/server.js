@@ -13,7 +13,7 @@
  * list of conditions and the following disclaimer in the documentation and/or other
  * materials provided with the distribution.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 'AS IS' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
  * IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
@@ -28,190 +28,208 @@
 // This is a modified version of OpenWebRTC simple signaling server
 // https://github.com/EricssonResearch/openwebrtc-examples/blob/master/web/channel_server.js
 
-var http = require("http");
-var path = require("path");
-var fs   = require("fs");
+const http = require('http');
+const path = require('path');
+const fs   = require('fs');
 
-var sessions = {};
-var usersInSessionLimit = 2;
+const sessions = {};
+const usersInSessionLimit = 2;
 
-var port = 8081;
-if (process.argv.length == 3)
-	port = process.argv[2];
+const port = process.argv.length >= 3 ? process.argv[2] : 8081;
 
-var serverDir = path.dirname(__filename);
-var clientDir = path.join(serverDir, "client/");
+const serverDir = path.dirname(__filename);
+const clientDir = path.join(serverDir, 'client/');
 
-var contentTypes = {
-	"htm":  "text/html;charset=utf-8",
-	"html": "text/html;charset=utf-8",
-	"js":   "text/javascript",
-	"css":  "text/css",
-	"json": "application/json",
-	"ico":  "image/x-icon",
-	"png":  "image/png",
-	"jpg":  "image/jpeg",
-	"jpeg": "image/jpeg",
-	"gif":  "image/gif",
-	"apk":  "application/vnd.android.package-archive"
+const contentTypes = {
+	'htm':  'text/html;charset=utf-8',
+	'html': 'text/html;charset=utf-8',
+	'js':   'text/javascript',
+	'css':  'text/css',
+	'json': 'application/json',
+	'ico':  'image/x-icon',
+	'png':  'image/png',
+	'jpg':  'image/jpeg',
+	'jpeg': 'image/jpeg',
+	'gif':  'image/gif',
+	'apk':  'application/vnd.android.package-archive'
 };
 
-var defaultHeaders = {
-	"Cache-Control": "no-cache, no-store",
-	"Pragma": "no-cache",
-	"Expires": "0"
+const defaultHeaders = {
+	'Cache-Control': 'no-cache',
+	'Pragma': 'no-cache',
+	'Expires': '0'
 };
 
-var server = http.createServer(function (request, response) {
-	var parts = request.url.split("/");
-	var headers = defaultHeaders;
-	
-	// Server to client
-	if(parts[1] == "stoc") {
-		var sessionId = parts[2];
-		var userId = parts[3];
-		if (!sessionId || !userId) {
-			response.writeHead(400);
-			response.end();
-			return;
-		}
-		
-		console.log("@" + sessionId + ": " + userId + " joined");
-		
-		headers["Content-Type"] = "text/event-stream";
-		response.writeHead(200, headers);
-		function keepAlive(resp) {
-			resp.write(":\n");
-			resp.keepAliveTimer = setTimeout(arguments.callee, 10000, resp);
-		}
-		keepAlive(response);  // flush headers + keep-alive
-		
-		var session = sessions[sessionId];
-		if(!session) session = sessions[sessionId] = {"users" : {}};
-		
-		var user = session.users[userId];
-		if(!user) {
-			if(Object.keys(session.users).length >= usersInSessionLimit) {
-				console.log("@" + sessionId + ": Limit for session reached");
-				response.write("event:busy\ndata:" + sessionId + "\n\n");
-				clearTimeout(response.keepAliveTimer);
+const server = http.createServer((request, response) => {
+	const parts = request.url.substring(1).split('/');
+	const route = parts.shift();
+	const headers = {};
+	Object.assign(headers, defaultHeaders);
+
+	switch(route) {
+		// Server to client
+		case 'stoc': {
+			const sessionId = parts.shift();
+			const userId = parts.shift();
+			if (!sessionId || !userId) {
+				response.writeHead(400);
 				response.end();
 				return;
 			}
 			
-			user = session.users[userId] = {};
-			for (var pname in session.users) {
-				var esResp = session.users[pname].esResponse;
-				if (esResp) {
-					clearTimeout(esResp.keepAliveTimer);
-					keepAlive(esResp);
-					esResp.write("event:join\ndata:" + userId + "\n\n");
-					response.write("event:join\ndata:" + pname + "\n\n");
+			console.log(`@${sessionId}: ${userId} joined`);
+			
+			headers['Content-Type'] = 'text/event-stream';
+			response.writeHead(200, headers);
+			
+			response.write(`retry: 1000\n\n`);
+			response.keepAliveTimer = setInterval(() => {
+				response.write(`event: keepalive\n\n`);
+			}, 10000);
+			
+			let session = sessions[sessionId];
+			if(!session) {
+				session = {
+					users: {}
+				};
+				sessions[sessionId] = session;
+			}
+			
+			let user = session.users[userId];
+			if(!user) {
+				if(Object.keys(session.users).length >= usersInSessionLimit) {
+					console.log(`@${sessionId}: Limit for session reached`);
+					response.write(`event: busy\ndata: ${sessionId}\n\n`);
+					clearTimeout(response.keepAliveTimer);
+					response.end();
+					return;
+				}
+				
+				user = session.users[userId] = {};
+				for(const pname in session.users) {
+					const esResp = session.users[pname].esResponse;
+					if(esResp) {
+						esResp.write(`event: join\ndata: ${userId}\n\n`);
+						response.write(`event: join\ndata: ${pname}\n\n`);
+					}
 				}
 			}
-		}
-		else if (user.esResponse) {
-			console.log("@" + sessionId + ": Replacing user " + userId);	
-			user.esResponse.end();
-			clearTimeout(user.esResponse.keepAliveTimer);
-			user.esResponse = null;
-		}
-		
-		request.on("close", function() {
-			for(var pname in session.users) {
-				if (pname == userId) continue;
-				var esResp = session.users[pname].esResponse;
-				if(esResp) {
-					esResp.write("event:leave\ndata:" + userId + "\n\n");
-				}
+			else if(user.esResponse) {
+				console.log(`@${sessionId}: Replacing user ${userId}`);
+				clearTimeout(user.esResponse.keepAliveTimer);
+				user.esResponse.end();
+				user.esResponse = null;
 			}
-			delete session.users[userId];
-			clearTimeout(response.keepAliveTimer);
-			console.log("@" + sessionId + ": " + userId + " left");
-			console.log("@" + sessionId + ": " + Object.keys(session.users).length + " users");
-		});
-
-		response.on("error", function(err) {
-                        console.log("@" + sessionId + ": " + userId + ": " + err);
-			request.emit("close");
-		});
-
-		user.esResponse = response;
-	}
-	// Client to server
-	else if(parts[1] == "ctos") {
-		var sessionId = parts[2];
-		var userId = parts[3];
-		var peerId = parts[4];
-		var session = sessionId ? sessions[sessionId] : null;
-		var peer = session ? session.users[peerId] : null;
-		if (!sessionId || !userId || !session || !peer) {
-			response.writeHead(400);
-			response.end();
-			return;
+			
+			request.on('close', () => {
+				for(const pname in session.users) {
+					if(pname == userId) continue;
+					const esResp = session.users[pname].esResponse;
+					if(esResp) {
+						esResp.write(`event: leave\ndata: ${userId}\n\n`);
+					}
+				}
+				delete session.users[userId];
+				clearTimeout(response.keepAliveTimer);
+				console.log(`@${sessionId}: ${userId} left`);
+				console.log(`@${sessionId}: ${Object.keys(session.users).length} users`);
+			});
+			
+			response.on('error', (err) => {
+				console.log(`@${sessionId}: ${userId}: ${err}`);
+				request.emit('close');
+			});
+			
+			user.esResponse = response;
+			break;
 		}
 		
-		var body = "";
-		request.on("data", function(data) { 
-			body += data;
-		});
-		request.on("end", function() {
-			var json = JSON.parse(body);
-			console.log("@" + sessionId + ": " + userId + " => " + peerId + " :");
-			console.log(body);
-			var evtdata = "data:" + body.replace(/\n/g, "\ndata:") + "\n";
-			peer.esResponse.write("event:user-" + userId + "\n" + evtdata + "\n");
-		});
 		
-		headers["Content-Type"] = "text/plain";
-		response.writeHead(204, headers);
-		response.end();
-	}
-	else if(parts[1] == "status") {
-		var sessionId = parts[2];
-		if (!sessionId) {
-			response.writeHead(400);
-			response.end();
-			return;
-		}
-
-		headers["Content-Type"] = "application/json";
-		response.writeHead(200, headers);
-
-		var session = sessions[sessionId];
-		var online = Boolean(session && Object.keys(session.users).length == 1 && Object.keys(session.users)[0][0] == '_');
-		var busy = Boolean(session && Object.keys(session.users).length >= usersInSessionLimit);
-		
-		response.write(JSON.stringify({"session": sessionId, "status": (online ? (busy ? "busy" : "online") : "offline")}));
-		response.end();
-	}
-	else {
-		var url = request.url.split("?", 1)[0];
-		var filePath = path.join(clientDir, url);
-		if (filePath.indexOf(clientDir) != 0 || filePath == clientDir)
-			filePath = path.join(clientDir, "/index.html");
-	
-		fs.stat(filePath, function (error, stats) {
-			if(error || !stats.isFile()) {
-				console.log("Error: File not found: " + filePath);
-				response.writeHead(404);
-				response.end("404 Not found");
+		// Client to server
+		case 'ctos': {
+			const sessionId = parts.shift();
+			const userId = parts.shift();
+			const peerId = parts.shift();
+			const session = sessionId ? sessions[sessionId] : null;
+			const peer = session ? session.users[peerId] : null;
+			if (!sessionId || !userId || !session || !peer) {
+				response.writeHead(400);
+				response.end();
 				return;
 			}
 			
-			var type = contentTypes[path.extname(filePath).substr(1)] || "text/plain";
-			response.writeHead(200, { "Content-Type": type });
-			
-			var readStream = fs.createReadStream(filePath);
-			readStream.on("error", function () {
-				response.writeHead(500);
-				response.end("500 Server error");
+			let body = '';
+			request.on('data', (data) => { 
+				body += data;
 			});
-			readStream.pipe(response);
-		});
+			
+			request.on('end', () => {
+				const json = JSON.parse(body);
+				console.log(`@${sessionId}: ${userId} => ${peerId}:`);
+				console.log(body);
+				peer.esResponse.write(`event: user-${userId}\ndata: ${body.replace(/\n/g, '\ndata: ')}\n\n`);
+			});
+			
+			headers['Content-Type'] = 'text/plain';
+			response.writeHead(204, headers);
+			response.end();
+			break;
+		}
+		
+		// Status
+		case 'status': {
+			const sessionId = parts.shift();
+			if (!sessionId) {
+				response.writeHead(400);
+				response.end();
+				return;
+			}
+			
+			headers['Content-Type'] = 'application/json';
+			response.writeHead(200, headers);
+			
+			const session = sessions[sessionId];
+			const count = session ? Object.keys(session.users).length : 0;
+			const online = Boolean(count == 1 && Object.keys(session.users)[0][0] == '_');
+			const busy = Boolean(count >= usersInSessionLimit);
+			
+			response.write(JSON.stringify({
+				session: sessionId, 
+				status: (online ? (busy ? 'busy' : 'online') : 'offline')
+			}));
+			response.end();
+			break;
+		}
+		
+		// Files
+		default: {
+			const url = request.url.split('?', 1)[0];
+			let filePath = path.join(clientDir, url);
+			if(filePath.indexOf(clientDir) != 0 || filePath == clientDir)
+				filePath = path.join(clientDir, '/index.html');
+			
+			fs.stat(filePath, (error, stats) => {
+				if(error || !stats.isFile()) {
+					console.log('Error: File not found: ' + filePath);
+					response.writeHead(404);
+					response.end('404 Not found');
+					return;
+				}
+				
+				const type = contentTypes[path.extname(filePath).substr(1)] || 'text/plain';
+				response.writeHead(200, { 'Content-Type': type });
+				
+				const readStream = fs.createReadStream(filePath);
+				readStream.on('error', () => {
+					response.writeHead(500);
+					response.end('500 Server error');
+				});
+				readStream.pipe(response);
+			});
+		}
 	}
 });
 
-console.log('Server listening on port ' + port);
+console.log(`Server listening on port ${port}`);
 server.timeout = 20000;
 server.listen(port);
