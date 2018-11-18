@@ -1,6 +1,6 @@
-/* 
+/*
  * Telebot Arduino program
- * Copyright (c) 2015-2016 by Paul-Louis Ageneau
+ * Copyright (c) 2015-2017 by Paul-Louis Ageneau
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
