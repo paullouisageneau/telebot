@@ -178,8 +178,8 @@ const server = http.createServer((request, response) => {
 			
 			const session = sessions[sessionId];
 			const count = session ? Object.keys(session.users).length : 0;
-			const online = Boolean(count == 1 && Object.keys(session.users)[0][0] == '_');
-			const busy = Boolean(count >= usersInSessionLimit);
+			const online = count >= 1 && Object.keys(session.users)[0][0] == '_';
+			const busy = count >= usersInSessionLimit;
 			
 			response.write(JSON.stringify({
 				session: sessionId, 
@@ -214,6 +214,7 @@ const server = http.createServer((request, response) => {
 				});
 				readStream.pipe(response);
 			});
+			break;
 		}
 	}
 });
