@@ -42,6 +42,10 @@ class SignalingChannel {
 			this.emitBusy();
 		});
 		
+		es.onerror = () => {
+			console.error("Signaling channel error");
+		};
+		
 		this.userDataCallback = (evt) => {
 			const peerUserId = evt.type.split('-')[1];
 			this.recv(peerUserId, evt.data);

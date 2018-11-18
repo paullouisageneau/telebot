@@ -71,9 +71,9 @@ const server = http.createServer((request, response) => {
 			response.writeHead(200, headers);
 			
 			response.write(`retry: 1000\n\n`);
-			response.keepAliveTimer = setInterval(() => {
+			response.keepaliveInterval = setInterval(() => {
 				response.write(`event: keepalive\n\n`);
-			}, 10000);
+			}, 5000);
 			
 			let session = sessions[sessionId];
 			if(!session) {
@@ -88,7 +88,7 @@ const server = http.createServer((request, response) => {
 				if(Object.keys(session.users).length >= usersInSessionLimit) {
 					console.log(`@${sessionId}: Limit for session reached`);
 					response.write(`event: busy\ndata: ${sessionId}\n\n`);
-					clearTimeout(response.keepAliveTimer);
+					clearInterval(response.keepaliveInterval);
 					response.end();
 					return;
 				}
@@ -104,7 +104,7 @@ const server = http.createServer((request, response) => {
 			}
 			else if(user.esResponse) {
 				console.log(`@${sessionId}: Replacing user ${userId}`);
-				clearTimeout(user.esResponse.keepAliveTimer);
+				clearInterval(user.esResponse.keepaliveInterval);
 				user.esResponse.end();
 				user.esResponse = null;
 			}
@@ -118,7 +118,7 @@ const server = http.createServer((request, response) => {
 					}
 				}
 				delete session.users[userId];
-				clearTimeout(response.keepAliveTimer);
+				clearInterval(response.keepaliveInterval);
 				console.log(`@${sessionId}: ${userId} left`);
 				console.log(`@${sessionId}: ${Object.keys(session.users).length} users`);
 			});
@@ -220,5 +220,5 @@ const server = http.createServer((request, response) => {
 });
 
 console.log(`Server listening on port ${port}`);
-server.timeout = 20000;
+server.timeout = 10000;
 server.listen(port);

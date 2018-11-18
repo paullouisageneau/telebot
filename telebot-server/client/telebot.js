@@ -113,6 +113,7 @@ function init() {
 	peerConnection = null;
 	peer = null;
 	remoteStream = null;
+	
 	remoteView.style.visibility = 'hidden';
 	logoContainer.style.display = 'block';
 	footer.style.display = 'block';
@@ -120,7 +121,9 @@ function init() {
 	sessionContainer.style.display = 'none';
 	videoContainer.style.display = 'none';
 	controlContainer.style.display = 'none';
+	
 	callButton.disabled = true;
+	
 	if(buttonRecord) buttonRecord.style.filter = 'grayscale(100%)';
 	if(buttonSpeed) buttonSpeed.style.filter = 'grayscale(100%)';
 	
@@ -519,9 +522,11 @@ function handleMessage(evt) {
 }
 
 function handleDisconnect() {
-	if(peerConnection) peerConnection.close();
 	if(signaling) signaling.close();
+	if(controlChannel) controlChannel.close();
+	if(peerConnection) peerConnection.close();
 	signaling = null;
+	controlChannel = null;
 	peerConnection = null;
 	peer = null;
 	remoteStream = null;
@@ -557,7 +562,16 @@ function start(isInitiator) {
 	// Create peer connection with the given configuration
 	peerConnection = new RTCPeerConnection(rtcConfiguration);
 	
-	// Send all ICE candidates to peer
+	// Start negociation
+	peerConnection.onnegotiationneeded = () => {
+		if(isInitiator) {
+			peerConnection.createOffer()
+				.then(localDescCreated)
+				.catch(logError);
+		}
+	}
+	
+	// Send ICE candidates to peer
 	peerConnection.onicecandidate = (evt) => {
 		if (evt.candidate) {
 			const { candidate, sdpMid, sdpMLineIndex } = evt.candidate;
@@ -596,39 +610,64 @@ function start(isInitiator) {
 		peerConnection.addTrack(track, localStream);
 	}
 
-	if(active) {
+	if(isInitiator) {
 		// Create control data channel
 		const controlChannelOptions = {
 			ordered: true
 		};
 		controlChannel = peerConnection.createDataChannel('control', controlChannelOptions);
+		controlChannel.onopen = () => {
+			handleControlChannel();
+		};
 	}
 	else {
 		// Accept control data channel
 		peerConnection.ondatachannel = (evt) => {
 			if(evt.channel.label == 'control') {
 				controlChannel = evt.channel;
-				controlChannel.onmessage = (evt) => {
-					const message = JSON.parse(evt.data);
-					if(message.control) {
-						const { left, right } = message.control;
-						localControl(Math.floor(left), Math.floor(right));
-					}
-				};
-				controlChannel.onerror = (err) => {
-					console.error(err);
-					handleDisconnect();
-				};
-				controlChannel.onclose = handleDisconnect;
+				handleControlChannel();
 			}
 		};
 	}
-	
-	if(isInitiator) {
-		peerConnection.createOffer()
-			.then(localDescCreated)
-			.catch(logError);
+}
+
+function handleControlChannel() {
+	const keepaliveInterval = setInterval(() => {
+		if(controlChannel.readyState == 'open') {
+			controlChannel.send(JSON.stringify({ 
+				keepalive: true
+			}));
+		}
+	}, 1000);
+
+	let keepaliveTimeout = null;
+	const resetKeepaliveTimeout = () => {
+		if(keepaliveTimeout) clearTimeout(keepaliveTimeout);
+		keepaliveTimeout = setTimeout(() => {
+			if(controlChannel.readyState == 'open') {
+				controlChannel.close();
+			}
+		}, 5000);
 	}
+	
+	controlChannel.onclose = () => {
+		clearInterval(keepaliveInterval);
+		clearTimeout(keepaliveTimeout);
+		handleDisconnect();
+	}
+	
+	controlChannel.onerror = (err) => {
+		console.error(err);
+	};
+	
+	controlChannel.onmessage = (evt) => {
+		const message = JSON.parse(evt.data);
+		if(message.control && !active) {
+			const { left, right } = message.control;
+			localControl(Math.floor(left), Math.floor(right));
+		}
+		resetKeepaliveTimeout();
+	};
 }
 
 // Handle local session description
@@ -671,18 +710,18 @@ function updateControl() {
 	left  = Math.round(Math.min(Math.max(left,  -1), 1)*power);
 	right = Math.round(Math.min(Math.max(right, -1), 1)*power);
 
-	const message = JSON.stringify({ 
+	const message = { 
 		control: {
 			left: left,
 			right: right
 		}
-	});
+	};
 
 	if(controlChannel && controlChannel.readyState == 'open') {
-		controlChannel.send(message);
+		controlChannel.send(JSON.stringify(message));
 	}
 	else {
-		if(peer) peer.send(message);
+		if(peer) peer.send(JSON.stringify(message));
 	}
 }
 
