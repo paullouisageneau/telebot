@@ -649,6 +649,7 @@ function handleControlChannel() {
 			}
 		}, 5000);
 	}
+	resetKeepaliveTimeout();
 	
 	controlChannel.onclose = () => {
 		clearInterval(keepaliveInterval);
