@@ -59,6 +59,7 @@ let callButton;
 let callContainer;
 let videoContainer;
 let controlContainer;
+let wrapper;
 let arrowUp;
 let arrowDown;
 let arrowLeft;
@@ -153,10 +154,6 @@ function init() {
 	}
 	else {
 		initLocalControl(); // Reset local control
-		
-		document.body.onclick = () => {
-			requestFullScreen(document.body);
-		}
 	}
 };
 
@@ -172,6 +169,7 @@ window.onload = () => {
 	callButton = document.getElementById('call_button');
 	videoContainer  = document.getElementById('video_container');
 	controlContainer = document.getElementById('control_container');
+	wrapper = document.getElementById('wrapper');
 	arrowUp    = document.getElementById('arrow_up');
 	arrowDown  = document.getElementById('arrow_down');
 	arrowLeft  = document.getElementById('arrow_left');
@@ -180,24 +178,34 @@ window.onload = () => {
 	buttonSpeed = document.getElementById('button_speed');
 	logo = document.getElementById('logo');
 	footer = document.getElementById('footer');
-
+	
 	// Initialize
 	init();
-
+	
 	// Check WebRTC is available
 	if(!navigator.mediaDevices.getUserMedia || !RTCPeerConnection) {
 		displayMessage('Browser not compatible');
 		clearTimeout(displayMessageTimeout);
 		return;
 	}
-	
-	// By default, call button ask for media
+
 	if(active) {
+		// Allow fullscreen
+		videoContainer.onclick = () => {
+			toggleFullscreen(wrapper);
+		};
+		// By default, call button ask for media
 		callButton.onclick = () => {
 			displayMessage('Access to media device not allowed');
 		};
 	}
-
+	else {
+		// Allow fullscreen
+		document.body.onclick = () => {
+			toggleFullscreen(document.body);
+		};
+	}
+	
 	// Get a local stream
 	const constraints = { audio: true, video: true }; 
 	navigator.mediaDevices.getUserMedia(constraints)
@@ -859,16 +867,30 @@ function dateString(date) {
 	return `${d.getFullYear()}-${('0'+(d.getMonth()+1)).slice(-2)}-${('0'+d.getDate()).slice(-2)}-${('0'+d.getHours()).slice(-2)}${('0'+d.getMinutes()).slice(-2)}${('0'+d.getSeconds()).slice(-2)}`;
 }
 
-// Switch element to fullscreen mode
-function requestFullScreen(element) {
-    if (element.requestFullscreen)
-        element.requestFullscreen();
-    else if (element.msRequestFullscreen)
-        element.msRequestFullscreen();
-    else if (element.mozRequestFullScreen)
-        element.mozRequestFullScreen();
-    else if (element.webkitRequestFullscreen)
-        element.webkitRequestFullscreen();
+// Toggle fullscreen mode
+function toggleFullscreen(element) {
+	if (!document.fullscreenElement &&
+      !document.mozFullScreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement ) {
+		if (element.requestFullscreen) {
+			element.requestFullscreen();
+		} else if (element.msRequestFullscreen) {
+			element.msRequestFullscreen();
+		} else if (element.mozRequestFullScreen) {
+			element.mozRequestFullScreen();
+		} else if (element.webkitRequestFullscreen) {
+			element.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
+		}
+	} else {
+		if (document.exitFullscreen) {
+			document.exitFullscreen();
+		} else if (document.msExitFullscreen) {
+			document.msExitFullscreen();
+		} else if (document.mozCancelFullScreen) {
+			document.mozCancelFullScreen();
+		} else if (document.webkitExitFullscreen) {
+			document.webkitExitFullscreen();
+		}
+	}
 }
 
 // Log error
