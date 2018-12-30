@@ -63,6 +63,7 @@ video {
 }
 #video_container {
 	flex: 1;
+	display: none;
 	position: relative;
 	background-color: #000000;
 }
