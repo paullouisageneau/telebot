@@ -44,6 +44,7 @@ video {
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
+	min-height: 0;
 	background-color: #FFFFFF;
 }
 #logo_container {
@@ -64,6 +65,7 @@ video {
 #video_container {
 	flex: 1;
 	display: none;
+	min-height: 0;
 	position: relative;
 	background-color: #000000;
 }
