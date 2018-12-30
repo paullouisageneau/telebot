@@ -100,10 +100,10 @@ function init() {
 		// If not active, switch to dark background
 		document.body.style.background = '#000000';
 		document.body.style.color = '#FFFFFF';
+		wrapper.style.background = '#000000';
 		logo.style.visibility = 'hidden';
 		footer.style.visibility = 'hidden';
 		callButton.style.visibility = 'hidden';
-		wrapper.style.visibility = 'hidden';
 	}
 	
 	// Initialize everything

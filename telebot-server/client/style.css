@@ -40,6 +40,9 @@ video {
 	text-align: center;
 }
 #wrapper {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
 	background-color: #FFFFFF;
 }
 #logo_container {
@@ -59,9 +62,6 @@ video {
 }
 #video_container {
 	flex: 1;
-	display: flex;
-	flex-direction: column;
-	justify-content: center;
 	position: relative;
 	background-color: #000000;
 }
