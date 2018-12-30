@@ -70,6 +70,7 @@ video {
 }
 #control_container {
 	display: none;
+	padding-bottom: 0.5em;
 }
 #control_container table {
 	max-width: 100%;
