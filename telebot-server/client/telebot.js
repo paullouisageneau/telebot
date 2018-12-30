@@ -123,6 +123,7 @@ function init() {
 	sessionContainer.style.display = 'none';
 	videoContainer.style.display = 'none';
 	controlContainer.style.display = 'none';
+	wrapper.style.visibility = 'visible';
 	
 	callButton.disabled = true;
 	
