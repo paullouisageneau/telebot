@@ -103,6 +103,7 @@ function init() {
 		logo.style.visibility = 'hidden';
 		footer.style.visibility = 'hidden';
 		callButton.style.visibility = 'hidden';
+		wrapper.style.visibility = 'hidden';
 	}
 	
 	// Initialize everything
