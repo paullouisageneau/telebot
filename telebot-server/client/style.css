@@ -45,7 +45,6 @@ video {
 	flex-direction: column;
 	justify-content: center;
 	background-color: #FFFFFF;
-	visibility: hidden;
 }
 #logo_container {
 	display: block;

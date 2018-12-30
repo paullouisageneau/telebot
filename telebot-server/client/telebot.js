@@ -123,7 +123,7 @@ function init() {
 	sessionContainer.style.display = 'none';
 	videoContainer.style.display = 'none';
 	controlContainer.style.display = 'none';
-	wrapper.style.visibility = 'visible';
+	wrapper.style.display = 'none';
 	
 	callButton.disabled = true;
 	
@@ -542,12 +542,13 @@ function handleDisconnect() {
 	remoteStream = null;
 	
 	// Hide videos and display call container
-	remoteView.style.visibility = 'hidden';
 	videoContainer.style.display = 'none';
+	wrapper.style.display = 'none';
 	controlContainer.style.display = 'none';
 	callContainer.style.display = 'block';
 	logoContainer.style.display = 'block';
 	footer.style.display = 'block';
+	remoteView.style.visibility = 'hidden';
 	
 	if(active) {
 		displayMessage('Disconnected');
@@ -564,6 +565,7 @@ function start(isInitiator) {
 	// Clear message
 	displayMessage('');
 	
+	wrapper.style.display = 'flex';
 	videoContainer.style.display = 'block';
 	callContainer.style.display = 'none';
 	logoContainer.style.display = 'none';
