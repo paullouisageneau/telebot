@@ -541,9 +541,6 @@ function handleDisconnect() {
 	peer = null;
 	remoteStream = null;
 	
-	// Exit fullscreen
-	exitFullscreen();
-	
 	// Hide videos and display call container
 	videoContainer.style.display = 'none';
 	wrapper.style.display = 'none';
@@ -554,6 +551,7 @@ function handleDisconnect() {
 	remoteView.style.visibility = 'hidden';
 	
 	if(active) {
+		exitFullscreen();
 		displayMessage('Disconnected');
 		callButton.disabled = false;
 	}
