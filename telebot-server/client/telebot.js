@@ -541,6 +541,9 @@ function handleDisconnect() {
 	peer = null;
 	remoteStream = null;
 	
+	// Exit fullscreen
+	exitFullscreen();
+	
 	// Hide videos and display call container
 	videoContainer.style.display = 'none';
 	wrapper.style.display = 'none';
@@ -871,6 +874,19 @@ function dateString(date) {
 	return `${d.getFullYear()}-${('0'+(d.getMonth()+1)).slice(-2)}-${('0'+d.getDate()).slice(-2)}-${('0'+d.getHours()).slice(-2)}${('0'+d.getMinutes()).slice(-2)}${('0'+d.getSeconds()).slice(-2)}`;
 }
 
+// Exit fullscreen mode
+function exitFullscreen() {
+	if (document.exitFullscreen) {
+		document.exitFullscreen();
+	} else if (document.msExitFullscreen) {
+		document.msExitFullscreen();
+	} else if (document.mozCancelFullScreen) {
+		document.mozCancelFullScreen();
+	} else if (document.webkitExitFullscreen) {
+		document.webkitExitFullscreen();
+	}
+}
+
 // Toggle fullscreen mode
 function toggleFullscreen(element) {
 	if (!document.fullscreenElement &&
@@ -885,15 +901,7 @@ function toggleFullscreen(element) {
 			element.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
 		}
 	} else {
-		if (document.exitFullscreen) {
-			document.exitFullscreen();
-		} else if (document.msExitFullscreen) {
-			document.msExitFullscreen();
-		} else if (document.mozCancelFullScreen) {
-			document.mozCancelFullScreen();
-		} else if (document.webkitExitFullscreen) {
-			document.webkitExitFullscreen();
-		}
+		exitFullscreen();
 	}
 }
 
