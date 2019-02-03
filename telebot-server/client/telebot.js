@@ -104,6 +104,9 @@ function init() {
 		logo.style.visibility = 'hidden';
 		footer.style.visibility = 'hidden';
 		callButton.style.visibility = 'hidden';
+
+                // Set remote video to cover
+                remoteView.style.object-fit = 'cover';
 	}
 	
 	// Initialize everything
