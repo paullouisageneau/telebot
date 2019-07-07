@@ -105,8 +105,8 @@ function init() {
 		footer.style.visibility = 'hidden';
 		callButton.style.visibility = 'hidden';
 
-                // Set remote video to cover
-                remoteView.style.object-fit = 'cover';
+		// Set remote video to cover
+		remoteView.style.objectFit = 'cover';
 	}
 	
 	// Initialize everything
