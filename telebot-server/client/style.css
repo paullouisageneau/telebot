@@ -96,8 +96,9 @@ video {
 	max-width: 25%;
 	max-height: 25%;
 	top: 0;
-	right: 0;
+	left: 0;
 	object-fit: cover;
+	transform: rotateY(180deg);
 }
 #remote_view {
 	width: 100%;
