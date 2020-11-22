@@ -212,7 +212,21 @@ window.onload = () => {
 	}
 	
 	// Get a local stream
-	const constraints = { audio: true, video: true }; 
+	const constraints = {
+		audio: true,
+		video: {
+			width: {
+				min: 480,
+				max: 1024
+			},
+			height: {
+				min: 480,
+				max: 1024
+			},
+			aspectRatio: 4/3,
+			facingMode: "user"
+		}
+	};
 	navigator.mediaDevices.getUserMedia(constraints)
 		.then((stream) => {
 			localStream = stream;
