@@ -34,7 +34,6 @@ video {
 	flex-direction: column;
 	width: 100%;
 	height: 100vh;
-	max-width: 720px;
 	margin-left: auto;
 	margin-right: auto;
 	text-align: center;
