@@ -42,6 +42,7 @@ const localControlUrl = 'http://127.0.0.1:11698/control';
 
 // Global variables
 let active = true;
+let legacy = false;
 let sessionId = '';
 let userId = '';
 
@@ -65,7 +66,6 @@ let arrowDown;
 let arrowLeft;
 let arrowRight;
 let buttonRecord;
-let buttonSpeed;
 let logo;
 let footer;
 
@@ -94,6 +94,10 @@ function init() {
 	if(!sessionStorage.mode) sessionStorage.mode = 'active';
 	active = (sessionStorage.mode != 'passive');
 	sessionId = hash;
+	if(sessionId.length == 6) { 
+		legacy = true;
+		console.log("Legacy mode");
+	}
 	if(!userId) userId = (active ? '' : '_') + Math.random().toString(16).substr(2);
 	
 	if(!active) {
@@ -131,7 +135,6 @@ function init() {
 	callButton.disabled = true;
 	
 	if(buttonRecord) buttonRecord.style.filter = 'grayscale(100%)';
-	if(buttonSpeed) buttonSpeed.style.filter = 'grayscale(100%)';
 	
 	// If no session is specified, hide call container
 	if(!sessionId) callContainer.style.display = 'none';
@@ -180,7 +183,6 @@ window.onload = () => {
 	arrowLeft  = document.getElementById('arrow_left');
 	arrowRight = document.getElementById('arrow_right');
 	buttonRecord = document.getElementById('button_record');
-	buttonSpeed = document.getElementById('button_speed');
 	logo = document.getElementById('logo');
 	footer = document.getElementById('footer');
 	
@@ -331,15 +333,6 @@ window.onload = () => {
 		// Set key callbacks
 		document.onkeydown = handleKeyDown;
 		document.onkeyup = handleKeyUp;
-		
-		// Set speed button
-		if(buttonSpeed) {
-			buttonSpeed.onclick = () => {
-				if(buttonSpeed.style.filter != 'none')
-					buttonSpeed.style.filter = 'none';
-				else buttonSpeed.style.filter = 'grayscale(100%)';
-			};
-		}
 		
 		// Set status callback
 		setInterval(() => { 
@@ -725,8 +718,8 @@ function updateControl() {
 		right+= 1;
 	}
 	if(controlDown) {
-		left += -0.70;
-		right+= -0.70;
+		left += -0.75;
+		right+= -0.75;
 	}
 	if(controlLeft) {
 		left = Math.min(left  - 0.50, 0);
@@ -737,7 +730,7 @@ function updateControl() {
 		right= Math.min(right - 0.50, 0);
 	}
 	
-	const power = (buttonSpeed && buttonSpeed.style.filter != 'none' ? 50 : 100);
+	const power = (legacy ? 50 : 100);
 	left  = Math.round(Math.min(Math.max(left,  -1), 1)*power);
 	right = Math.round(Math.min(Math.max(right, -1), 1)*power);
 
