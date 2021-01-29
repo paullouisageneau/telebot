@@ -670,7 +670,7 @@ function handleControlChannel() {
 			if(controlChannel.readyState == 'open') {
 				controlChannel.close();
 			}
-		}, 5000);
+		}, 4000);
 	}
 	resetKeepaliveTimeout();
 	
