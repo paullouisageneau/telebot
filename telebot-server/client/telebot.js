@@ -710,7 +710,7 @@ function localDescCreated(desc) {
 function updateControl() {
 	if(controlContainer.style.display == 'none')
 		return;
-	
+
 	let left  = 0;
 	let right = 0;
 	if(controlUp) {
@@ -718,19 +718,34 @@ function updateControl() {
 		right+= 1;
 	}
 	if(controlDown) {
-		left += -0.75;
-		right+= -0.75;
+		if(legacy) {
+			left += -0.70;
+			right+= -0.70;
+		} else {
+			left += -1;
+			right+= -1;
+		}
 	}
 	if(controlLeft) {
-		left = Math.min(left  - 0.50, 0);
-		right= Math.max(right + 0.30, 0);
+		if(legacy) {
+			left = Math.min(left  - 0.50, 0);
+			right= Math.max(right + 0.30, 0);
+		} else {
+			left+= -1;
+			right+= 1;
+		}
 	}
 	if(controlRight) {
-		left = Math.max(left  + 0.30, 0);
-		right= Math.min(right - 0.50, 0);
+		if(legacy) {
+			left = Math.max(left  + 0.30, 0);
+			right= Math.min(right - 0.50, 0);
+		} else {	
+			left+= 1;
+			right+= -1;
+		}
 	}
 	
-	const power = (legacy ? 50 : 100);
+	const power = legacy ? 50 : 80;
 	left  = Math.round(Math.min(Math.max(left,  -1), 1)*power);
 	right = Math.round(Math.min(Math.max(right, -1), 1)*power);
 
