@@ -745,7 +745,7 @@ function updateControl() {
 		}
 	}
 	
-	const power = legacy ? 50 : 80;
+	const power = legacy ? 50 : 75;
 	left  = Math.round(Math.min(Math.max(left,  -1), 1)*power);
 	right = Math.round(Math.min(Math.max(right, -1), 1)*power);
 
