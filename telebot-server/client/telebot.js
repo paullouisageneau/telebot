@@ -95,7 +95,7 @@ function init() {
 	active = (sessionStorage.mode != 'passive');
 	sessionId = hash;
 	if(!userId) userId = (active ? '' : '_') + Math.random().toString(16).substr(2);
-	
+
 	if(!active) {
 		// If not active, switch to dark background
 		document.body.style.background = '#000000';
@@ -108,7 +108,7 @@ function init() {
 		// Set remote video to cover
 		remoteView.style.objectFit = 'cover';
 	}
-	
+
 	// Initialize everything
 	if(signaling) signaling.close();
 	if(controlChannel) controlChannel.close();
@@ -118,7 +118,7 @@ function init() {
 	peerConnection = null;
 	peer = null;
 	remoteStream = null;
-	
+
 	remoteView.style.visibility = 'hidden';
 	logoContainer.style.display = 'block';
 	footer.style.display = 'block';
@@ -127,12 +127,12 @@ function init() {
 	videoContainer.style.display = 'none';
 	controlContainer.style.display = 'none';
 	wrapper.style.display = 'none';
-	
+
 	callButton.disabled = true;
-	
+
 	if(buttonRecord) buttonRecord.style.filter = 'grayscale(100%)';
 	if(buttonSpeed) buttonSpeed.style.filter = 'grayscale(100%)';
-	
+
 	// If no session is specified, hide call container
 	if(!sessionId) callContainer.style.display = 'none';
 
@@ -153,12 +153,12 @@ function init() {
 			sessionText.focus();
 			return;
 		}
-		
+
 		// Refresh status
 		requestStatus();
 	}
 	else {
-		initLocalControl(); // Reset local control
+		localControl(0, 0); // Reset local control
 	}
 };
 
@@ -183,10 +183,10 @@ window.onload = () => {
 	buttonSpeed = document.getElementById('button_speed');
 	logo = document.getElementById('logo');
 	footer = document.getElementById('footer');
-	
+
 	// Initialize
 	init();
-	
+
 	// Check WebRTC is available
 	if(!navigator.mediaDevices.getUserMedia || !RTCPeerConnection) {
 		displayMessage('Browser not compatible');
@@ -210,20 +210,20 @@ window.onload = () => {
 			toggleFullscreen(document.body);
 		};
 	}
-	
+
 	// Get a local stream
-	const constraints = { audio: true, video: true }; 
+	const constraints = { audio: true, video: true };
 	navigator.mediaDevices.getUserMedia(constraints)
 		.then((stream) => {
 			localStream = stream;
-			
+
 			// Set self view
 			selfView.srcObject = stream;
 			selfView.style.visibility = 'visible';
 			selfView.onloadedmetadata = () => {
 				selfView.play();
 			};
-			
+
 			if(active) {
 				// If active, call button triggers peerJoin()
 				callButton.onclick = () => {
@@ -236,14 +236,14 @@ window.onload = () => {
 				peerJoin();
 			}
 		})
-		.catch((err) => { 
+		.catch((err) => {
 			logError(err);
 			callContainer.style.display = 'none';
 			sessionContainer.style.display = 'none';
 			displayMessage('Media device not available');
 			clearTimeout(displayMessageTimeout);
 		});
-		
+
 	if(active) {
 		// Request notification permission
 		if(Notification && Notification.permission != 'granted') {
@@ -251,7 +251,7 @@ window.onload = () => {
 				console.log(permission);
 			});
 		}
-		
+
 		// Handle mouse down on arrows
 		arrowUp.onmousedown = (evt) => {
 			evt.preventDefault();
@@ -281,7 +281,7 @@ window.onload = () => {
 				updateControl();
 			}
 		};
-		
+
 		// Handle mouse up on arrows
 		arrowUp.onmouseup = (evt) => {
 			controlUp = false;
@@ -299,7 +299,7 @@ window.onload = () => {
 			controlRight = false;
 			updateControl();
 		};
-		
+
 		// Handle touchscreens
 		if('ontouchstart' in document.documentElement) {
 			// touch start
@@ -313,11 +313,11 @@ window.onload = () => {
 			arrowLeft.ontouchend = arrowLeft.onmouseup;
 			arrowRight.ontouchend = arrowRight.onmouseup;
 		}
-		
+
 		// Set key callbacks
 		document.onkeydown = handleKeyDown;
 		document.onkeyup = handleKeyUp;
-		
+
 		// Set speed button
 		if(buttonSpeed) {
 			buttonSpeed.onclick = () => {
@@ -326,9 +326,9 @@ window.onload = () => {
 				else buttonSpeed.style.filter = 'grayscale(100%)';
 			};
 		}
-		
+
 		// Set status callback
-		setInterval(() => { 
+		setInterval(() => {
 			requestStatus();
 		}, 10000);
 	}
@@ -342,7 +342,7 @@ window.onhashchange = () => {
 // Callback for status request
 function requestStatus() {
 	if(!sessionId) return;
-	
+
 	fetch(`status/${sessionId}`)
 		.then((response) => {
 			if(!response.ok) throw Error(response.statusText);
@@ -432,10 +432,10 @@ function peerJoin() {
 	// This can be long, display proper message
 	if(active) displayMessage('Calling...');
 	else displayMessage('Ready\n\n'+sessionId);
-	
+
 	// Create signaling channel
 	signaling = new SignalingChannel(sessionId, userId);
-	
+
 	// Set unavailability timeout if active
 	let timeout = null;
 	if(active) {
@@ -447,7 +447,7 @@ function peerJoin() {
 			callButton.disabled = false;
 		}, 5000);
 	}
-	
+
 	// Handle busy session
 	signaling.onbusy = (evt) => {
 		if(active) requestStatus();
@@ -456,24 +456,24 @@ function peerJoin() {
 		signaling = null;
 		if(active) callButton.disabled = false;
 	};
-	
+
 	// Handle incoming peer
 	signaling.onpeer = (evt) => {
 		if(active && evt.userid[0] != '_') return;
-		
+
 		if(timeout) clearTimeout(timeout);
 		peer = evt.peer;
-		
+
 		peer.onmessage = handleMessage;
 		peer.ondisconnect = handleDisconnect;
-		
+
 		// Send orientation changes to peer
 		/*window.onorientationchange = () => {
 			if(peer) peer.send(JSON.stringify({
 				orientation: window.orientation
 			}));
 		};*/
-		
+
 		// If active, schedule session initiation now
 		if(active) {
 			setTimeout(() => {
@@ -481,7 +481,7 @@ function peerJoin() {
 			}, 500);
 		}
 	};
-	
+
 	// Properly close signaling channel is window is closed
 	window.onbeforeunload = () => {
 		if(signaling) signaling.close();
@@ -493,11 +493,11 @@ function peerJoin() {
 // Handle signaling messages received from peer
 function handleMessage(evt) {
 	const message = JSON.parse(evt.data);
-	
+
 	if(!peerConnection && (message.sdp || message.candidate)) {
 		start(false);
 	}
-	
+
 	if(message.sdp) {
 		// Parse session description
 		const description = new RTCSessionDescription({
@@ -516,17 +516,17 @@ function handleMessage(evt) {
 			})
 			.catch(logError);
 	}
-	
+
 	if(message.candidate) {
 		peerConnection.addIceCandidate(new RTCIceCandidate(message)).catch(logError);
 	}
-	
+
 	if(message.orientation) {
 		if(remoteView) {
 			remoteView.style.transform = `rotate(${message.orientation}deg)`;
 		}
 	}
-	
+
 	if(message.control && !active) {
 		const left = Math.floor(message.control.left);
 		const right = Math.floor(message.control.right);
@@ -543,7 +543,7 @@ function handleDisconnect() {
 	peerConnection = null;
 	peer = null;
 	remoteStream = null;
-	
+
 	// Hide videos and display call container
 	videoContainer.style.display = 'none';
 	wrapper.style.display = 'none';
@@ -552,7 +552,7 @@ function handleDisconnect() {
 	logoContainer.style.display = 'block';
 	footer.style.display = 'block';
 	remoteView.style.visibility = 'hidden';
-	
+
 	if(active) {
 		exitFullscreen();
 		displayMessage('Disconnected');
@@ -568,16 +568,16 @@ function handleDisconnect() {
 function start(isInitiator) {
 	// Clear message
 	displayMessage('');
-	
+
 	wrapper.style.display = 'flex';
 	videoContainer.style.display = 'block';
 	callContainer.style.display = 'none';
 	logoContainer.style.display = 'none';
 	footer.style.display = 'none';
-	
+
 	// Create peer connection with the given configuration
 	peerConnection = new RTCPeerConnection(rtcConfiguration);
-	
+
 	// Start negociation
 	peerConnection.onnegotiationneeded = () => {
 		if(isInitiator) {
@@ -586,7 +586,7 @@ function start(isInitiator) {
 				.catch(logError);
 		}
 	}
-	
+
 	// Send ICE candidates to peer
 	peerConnection.onicecandidate = (evt) => {
 		if (evt.candidate) {
@@ -598,11 +598,11 @@ function start(isInitiator) {
 			}));
 		}
 	};
-	
+
 	// Once we get the remote stream
 	peerConnection.ontrack = (evt) => {
 		remoteStream = evt.streams[0];
-		
+
 		// Set remote view
 		remoteView.srcObject = remoteStream;
 		remoteView.style.visibility = 'visible';
@@ -613,14 +613,14 @@ function start(isInitiator) {
 		if(active) {
 			// Display controls
 			controlContainer.style.display = 'block';
-		
+
 			// Set recording button
 			if(buttonRecord) buttonRecord.onclick = () => {
 				startRecording();
 			};
 		}
 	};
-	
+
 	// Add local stream
 	for (const track of localStream.getTracks()) {
 		peerConnection.addTrack(track, localStream);
@@ -650,7 +650,7 @@ function start(isInitiator) {
 function handleControlChannel() {
 	const keepaliveInterval = setInterval(() => {
 		if(controlChannel.readyState == 'open') {
-			controlChannel.send(JSON.stringify({ 
+			controlChannel.send(JSON.stringify({
 				keepalive: true
 			}));
 		}
@@ -666,17 +666,17 @@ function handleControlChannel() {
 		}, 5000);
 	}
 	resetKeepaliveTimeout();
-	
+
 	controlChannel.onclose = () => {
 		clearInterval(keepaliveInterval);
 		clearTimeout(keepaliveTimeout);
 		handleDisconnect();
 	}
-	
+
 	controlChannel.onerror = (err) => {
 		console.error(err);
 	};
-	
+
 	controlChannel.onmessage = (evt) => {
 		const message = JSON.parse(evt.data);
 		if(message.control && !active) {
@@ -703,7 +703,7 @@ function localDescCreated(desc) {
 function updateControl() {
 	if(controlContainer.style.display == 'none')
 		return;
-	
+
 	let left  = 0;
 	let right = 0;
 	if(controlUp) {
@@ -722,12 +722,12 @@ function updateControl() {
 		left = Math.max(left  + 0.30, 0);
 		right= Math.min(right - 0.50, 0);
 	}
-	
+
 	const power = (buttonSpeed && buttonSpeed.style.filter != 'none' ? 50 : 100);
 	left  = Math.round(Math.min(Math.max(left,  -1), 1)*power);
 	right = Math.round(Math.min(Math.max(right, -1), 1)*power);
 
-	const message = { 
+	const message = {
 		control: {
 			left: left,
 			right: right
@@ -766,7 +766,7 @@ function startRecording() {
 				};
 			}
 		});
-	
+
 	if(buttonRecord) {
 		buttonRecord.style.filter = 'none';
 		buttonRecord.onclick = () => {
@@ -786,14 +786,14 @@ function startRecording() {
 // Record a media stream
 function record(stream) {
 	recorder = new MediaRecorder(stream, recorderOptions);
-	
+
 	const data = [];
 	recorder.ondataavailable = (evt) => {
 		data.push(evt.data);
 	};
 
 	recorder.start(1000);
- 
+
 	const finished = new Promise((resolve, reject) => {
 		recorder.onstop = resolve;
 		recorder.onerror = (err) => {
@@ -803,7 +803,7 @@ function record(stream) {
 		};
 	});
 
-	return finished.then(() => { 
+	return finished.then(() => {
 		return data;
 	});
 }
@@ -817,30 +817,9 @@ function displayMessage(msg) {
 			element.textContent = '';
 		}, 10000);
 	}
-		
+
 	element.textContent = msg;
 	element.innerHTML = element.innerHTML.replace(/\n\r?/g, '<br>');
-}
-
-// Init local API
-function initLocalControl() {
-	const body = JSON.stringify({
-		left: 0,
-		right: 0
-	});
-	fetch(localControlUrl, {
-		method: 'POST',
-		body: body,
-		headers: {
-			'Content-Type': 'application/json'
-		}
-	})
-	.then((response) => {
-		if(!response.ok) throw Error(response.statusText);
-	})
-	.catch((err) => {
-		window.location.href = 'https://telebot.ageneau.net/upgrade.html';
-	});
 }
 
 // Send control to local API
@@ -860,7 +839,7 @@ function localControl(left, right) {
 		if(!response.ok) throw Error(response.statusText);
 	})
 	.catch((err) => {
-		console.log(err);
+		console.error(err);
 	});
 }
 
